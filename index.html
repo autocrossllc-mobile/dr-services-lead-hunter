@@ -12,7 +12,7 @@
         <header class="flex justify-between items-center mb-6 border-b border-slate-800 pb-4">
             <div>
                 <h1 class="text-xl font-black tracking-wider text-amber-400">D&R SERVICES</h1>
-                <p class="text-xs text-slate-400 tracking-widest">LAWN & ABATEMENT HUNTER</p>
+                <p class="text-xs text-slate-400 tracking-widest">LOT, JUNK & ABATEMENT HUNTER</p>
             </div>
             <span class="bg-emerald-950 text-emerald-400 border border-emerald-800 text-xs px-2.5 py-1 rounded-full font-medium">
                 LIVE
@@ -21,7 +21,7 @@
 
         <div class="grid grid-cols-2 gap-3 mb-6">
             <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl">
-                <p class="text-xs text-slate-400 uppercase">🔥 Priority Target</p>
+                <p class="text-xs text-slate-400 uppercase">🔥 High-Ticket Targets</p>
                 <p id="hot-count" class="text-3xl font-bold text-amber-400 mt-1">0</p>
             </div>
             <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl">
@@ -62,10 +62,10 @@
                 return;
             }
 
-            // Filter priority: Lawn, cleanup, lot, abatement, brush, weed, overgrown
+            // Expanded filter: Lot cleanups, junk removal, hauling, estate cleanouts, abatements, brush, weed
             const isPriority = (l) => {
                 const text = ((l.service || '') + ' ' + (l.request || '')).toLowerCase();
-                return /lawn|cleanup|lot|abatement|brush|weed|overgrown|yard/.test(text);
+                return /lot|cleanup|abatement|junk|hauling|debris|cleanout|estate|brush|weed|overgrown|yard|acre/.test(text);
             };
 
             document.getElementById('hot-count').innerText = leads.filter(isPriority).length;
@@ -79,11 +79,12 @@
                     </div>
                     <h3 class="font-bold text-white text-base">${lead.service}</h3>
                     <p class="text-sm text-slate-300 mt-1">${lead.request}</p>
+                    <p class="text-xs text-amber-300/80 mt-2"><strong>Contact / Owner:</strong> ${lead.customer || 'Unassigned / Public Listing'}</p>
                     <div class="mt-3 pt-3 border-t border-slate-800 flex justify-between items-center text-xs text-slate-400">
                         <span>Est: <strong class="text-emerald-400">${lead.estimated_job || 'TBD'}</strong></span>
-                        <div class="space-x-2">
-                            <button onclick="contactLead('${lead.id}', '${lead.customer || 'Homeowner'}')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg font-bold">Contact</button>
-                            <button onclick="deleteLead('${lead.id}')" class="bg-rose-950 hover:bg-rose-900 text-rose-400 border border-rose-800 px-2.5 py-1.5 rounded-lg font-semibold">Delete</button>
+                        <div class="space-x-1">
+                            <button onclick="callLead('${lead.customer || ''}')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-2.5 py-1.5 rounded-lg font-bold">Contact</button>
+                            <button onclick="deleteLead('${lead.id}')" class="bg-rose-950 hover:bg-rose-900 text-rose-400 border border-rose-800 px-2 py-1.5 rounded-lg font-semibold">Delete</button>
                         </div>
                     </div>
                 </div>
@@ -100,8 +101,8 @@
             }
         }
 
-        function contactLead(id, name) {
-            alert(`Opening contact sequence for ${name}. Connecting to direct dialer/SMS...`);
+        function callLead(name) {
+            alert(`Initiating direct outreach script for ${name}. Opening dialer...`);
         }
 
         loadDashboard();
