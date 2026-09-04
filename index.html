@@ -6,45 +6,32 @@
     <title>D&R Lead Hunter Dashboard</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body { font-family: Arial, sans-serif; background-color: #f4f6f9; margin: 0; padding: 20px; color: #333; }
-        .container { max-width: 1000px; margin: 0 auto; }
-        h1 { color: #1e293b; text-align: center; margin-bottom: 30px; }
-        .lead-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
-        .lead-card { background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-left: 5px solid #2563eb; display: flex; flex-direction: column; justify-content: space-between; }
-        .lead-card h3 { margin-top: 0; color: #1e293b; font-size: 1.1rem; }
-        .lead-info { font-size: 0.9rem; margin-bottom: 10px; color: #475569; }
-        .lead-info span { font-weight: bold; color: #0f172a; }
-        .btn-contact { background-color: #2563eb; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; text-align: center; transition: background 0.2s; }
-        .btn-contact:hover { background-color: #1d4ed8; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #f8fafc; margin: 0; padding: 30px; color: #1e293b; }
+        .container { max-width: 1100px; margin: 0 auto; }
+        h1 { font-size: 1.75rem; font-weight: 700; color: #0f172a; margin-bottom: 25px; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
+        .card { background: #ffffff; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; padding: 20px; display: flex; flex-direction: column; justify-content: space-between; transition: box-shadow 0.2s; }
+        .card:hover { box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        .card-title { font-size: 1.1rem; font-weight: 600; color: #0f172a; margin-bottom: 10px; }
+        .card-detail { font-size: 0.9rem; color: #475569; margin-bottom: 6px; }
+        .card-detail span { font-weight: 500; color: #334155; }
         
-        /* Modal Styles */
-        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); justify-content: center; align-items: center; }
-        .modal-content { background: #fff; padding: 30px; border-radius: 8px; width: 90%; max-width: 500px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); position: relative; }
-        .close-btn { position: absolute; top: 15px; right: 20px; font-size: 1.5rem; cursor: pointer; color: #64748b; }
-        .modal-content h2 { margin-top: 0; color: #1e293b; }
-        .modal-row { margin-bottom: 15px; font-size: 0.95rem; }
-        .modal-row span { font-weight: bold; color: #0f172a; display: block; margin-bottom: 3px; color: #2563eb; }
+        .contact-section { margin-top: 15px; border-top: 1px solid #f1f5f9; padding-top: 15px; }
+        .btn-contact { background-color: #0f172a; color: #ffffff; border: none; width: 100%; padding: 10px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 0.9rem; transition: background 0.2s; }
+        .btn-contact:hover { background-color: #334155; }
+        
+        .contact-info-box { display: none; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 12px; margin-top: 10px; font-size: 0.9rem; }
+        .contact-info-box p { margin: 6px 0; }
+        .contact-info-box strong { color: #0f172a; }
+        .phone-highlight { color: #16a34a; font-weight: 700; font-size: 1rem; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>Live Inland Empire Lead Dashboard</h1>
-    <div id="leads-container" class="lead-grid">
-        <p style="text-align: center; grid-column: 1 / -1;">Loading live leads from database...</p>
-    </div>
-</div>
-
-<!-- Detailed Lead Modal -->
-<div id="leadModal" class="modal">
-    <div class="modal-content">
-        <span class="close-btn" onclick="closeModal()">&times;</span>
-        <h2 id="modal-service">Lead Details</h2>
-        <div class="modal-row"><span>Customer / Contact Name:</span> <p id="modal-customer"></p></div>
-        <div class="modal-row"><span>Direct Phone Number:</span> <p id="modal-phone" style="font-size: 1.2rem; font-weight: bold; color: #16a34a;"></p></div>
-        <div class="modal-row"><span>Location:</span> <p id="modal-location"></p></div>
-        <div class="modal-row"><span>Estimated Budget / Job Value:</span> <p id="modal-budget"></p></div>
-        <div class="modal-row"><span>Full Request Details & Pitch:</span> <p id="modal-request" style="background: #f8fafc; padding: 10px; border-radius: 5px; border: 1px solid #e2e8f0;"></p></div>
+    <h1>Active Lead Dashboard</h1>
+    <div id="leads-container" class="grid">
+        <p style="color: #64748b;">Loading leads from database...</p>
     </div>
 </div>
 
@@ -53,9 +40,7 @@
     const SUPABASE_KEY = "sb_publishable_DSgli-s1kPh0zA4E-kT64A_6LiMrWg-";
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    let allLeads = [];
-
-    async function fetchLeads() {
+    async function loadLeads() {
         const { data, error } = await supabaseClient
             .from('leads')
             .select('*')
@@ -63,72 +48,66 @@
 
         const container = document.getElementById('leads-container');
         if (error) {
-            container.innerHTML = `<p style="color: red; text-align: center; grid-column: 1 / -1;">Error loading leads: ${error.message}</p>`;
+            container.innerHTML = `<p style="color: red;">Error loading data: ${error.message}</p>`;
             return;
         }
 
         if (!data || data.length === 0) {
-            container.innerHTML = `<p style="text-align: center; grid-column: 1 / -1;">No leads found yet. Run your Python script to start capturing!</p>`;
+            container.innerHTML = `<p style="color: #64748b;">No active leads found in database.</p>`;
             return;
         }
 
-        allLeads = data;
         container.innerHTML = '';
 
         data.forEach((lead) => {
+            // Extract clean values from stored strings if needed
+            let customerName = lead.customer || "Direct Lead";
+            let phoneNum = "See Listing / Details";
+            
+            if (lead.request && lead.request.includes("Phone:")) {
+                const parts = lead.request.split("Phone:");
+                if (parts.length > 1) {
+                    phoneNum = parts[1].split("|")[0].trim();
+                }
+            }
+            if (customerName.includes("(")) {
+                customerName = customerName.split("(")[0].trim();
+            }
+
             const card = document.createElement('div');
-            card.className = 'lead-card';
+            card.className = 'card';
             card.innerHTML = `
                 <div>
-                    <h3>${lead.service || 'Service Request'}</h3>
-                    <div class="lead-info"><span>Location:</span> ${lead.location || 'N/A'}</div>
-                    <div class="lead-info"><span>Est. Job:</span> ${lead.estimated_job || 'N/A'}</div>
-                    <div class="lead-info"><span>Customer:</span> ${lead.customer || 'N/A'}</div>
+                    <div class="card-title">${lead.service || 'Lawn Care Request'}</div>
+                    <div class="card-detail"><span>Est. Job:</span> ${lead.estimated_job || 'N/A'}</div>
+                    <div class="card-detail"><span>Status:</span> ${lead.status || 'New'}</div>
                 </div>
-                <button class="btn-contact" onclick="openLeadModal(${lead.id})">View Contact & Details</button>
+                <div class="contact-section">
+                    <button class="btn-contact" onclick="toggleContact(this)">Contact Info</button>
+                    <div class="contact-info-box">
+                        <p><strong>Name:</strong> ${customerName}</p>
+                        <p><strong>Phone:</strong> <span class="phone-highlight">${phoneNum}</span></p>
+                        <p><strong>Address:</strong> ${lead.location || 'Inland Empire, CA'}</p>
+                    </div>
+                </div>
             `;
             container.appendChild(card);
         });
     }
 
-    function openLeadModal(leadId) {
-        const lead = allLeads.find(l => l.id === leadId);
-        if (!lead) return;
-
-        document.getElementById('modal-service').innerText = lead.service || 'Lead Information';
-        document.getElementById('modal-customer').innerText = lead.customer || 'Not specified';
-        
-        // Extract phone number or show default if stored inline in request/customer strings
-        let phoneText = lead.customer;
-        if (lead.request && lead.request.includes("Phone:")) {
-            const parts = lead.request.split("Phone:");
-            if (parts.length > 1) {
-                phoneText = parts[1].split("|")[0].trim();
-            }
-        }
-        document.getElementById('modal-phone').innerText = phoneText || 'Check Details Below';
-        
-        document.getElementById('modal-location').innerText = lead.location || 'N/A';
-        document.getElementById('modal-budget').innerText = lead.estimated_job || 'N/A';
-        document.getElementById('modal-request').innerText = lead.request || 'No additional details provided.';
-
-        document.getElementById('leadModal').style.display = 'flex';
-    }
-
-    function closeModal() {
-        document.getElementById('leadModal').style.display = 'none';
-    }
-
-    window.onclick = function(event) {
-        const modal = document.getElementById('leadModal');
-        if (event.target === modal) {
-            closeModal();
+    function toggleContact(button) {
+        const box = button.nextElementSibling;
+        if (box.style.display === 'block') {
+            box.style.display = 'none';
+            button.innerText = 'Contact Info';
+        } else {
+            box.style.display = 'block';
+            button.innerText = 'Hide Info';
         }
     }
 
-    // Load leads on startup and refresh every 30 seconds
-    fetchLeads();
-    setInterval(fetchLeads, 30000);
+    loadLeads();
+    setInterval(loadLeads, 30000);
 </script>
 
 </body>
