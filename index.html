@@ -1,113 +1,56 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>D&R Lead Hunter Dashboard</title>
+    <title>Leads</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #f8fafc; margin: 0; padding: 30px; color: #1e293b; }
-        .container { max-width: 1100px; margin: 0 auto; }
-        h1 { font-size: 1.75rem; font-weight: 700; color: #0f172a; margin-bottom: 25px; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
-        .card { background: #ffffff; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; padding: 20px; display: flex; flex-direction: column; justify-content: space-between; transition: box-shadow 0.2s; }
-        .card:hover { box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
-        .card-title { font-size: 1.1rem; font-weight: 600; color: #0f172a; margin-bottom: 10px; }
-        .card-detail { font-size: 0.9rem; color: #475569; margin-bottom: 6px; }
-        .card-detail span { font-weight: 500; color: #334155; }
-        
-        .contact-section { margin-top: 15px; border-top: 1px solid #f1f5f9; padding-top: 15px; }
-        .btn-contact { background-color: #0f172a; color: #ffffff; border: none; width: 100%; padding: 10px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 0.9rem; transition: background 0.2s; }
-        .btn-contact:hover { background-color: #334155; }
-        
-        .contact-info-box { display: none; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 12px; margin-top: 10px; font-size: 0.9rem; }
-        .contact-info-box p { margin: 6px 0; }
-        .contact-info-box strong { color: #0f172a; }
-        .phone-highlight { color: #16a34a; font-weight: 700; font-size: 1rem; }
-    </style>
 </head>
-<body>
+<body style="font-family: Arial; padding: 20px;">
 
-<div class="container">
-    <h1>Active Lead Dashboard</h1>
-    <div id="leads-container" class="grid">
-        <p style="color: #64748b;">Loading leads from database...</p>
-    </div>
-</div>
+<h2>Leads</h2>
+<div id="leads-list">Loading...</div>
 
 <script>
-    const SUPABASE_URL = "https://grccpxhtwgctgwtjtejz.supabase.co";
-    const SUPABASE_KEY = "sb_publishable_DSgli-s1kPh0zA4E-kT64A_6LiMrWg-";
-    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    const supabaseClient = supabase.createClient("https://grccpxhtwgctgwtjtejz.supabase.co", "sb_publishable_DSgli-s1kPh0zA4E-kT64A_6LiMrWg-");
 
     async function loadLeads() {
-        const { data, error } = await supabaseClient
-            .from('leads')
-            .select('*')
-            .order('id', { ascending: false });
-
-        const container = document.getElementById('leads-container');
-        if (error) {
-            container.innerHTML = `<p style="color: red;">Error loading data: ${error.message}</p>`;
+        const { data, error } = await supabaseClient.from('leads').select('*').order('id', { ascending: false });
+        const container = document.getElementById('leads-list');
+        
+        if (error || !data || data.length === 0) {
+            container.innerHTML = "No leads found.";
             return;
         }
 
-        if (!data || data.length === 0) {
-            container.innerHTML = `<p style="color: #64748b;">No active leads found in database.</p>`;
-            return;
-        }
-
-        container.innerHTML = '';
-
-        data.forEach((lead) => {
-            // Extract clean values from stored strings if needed
-            let customerName = lead.customer || "Direct Lead";
-            let phoneNum = "See Listing / Details";
-            
+        let html = '<ul style="list-style-type: none; padding: 0;">';
+        data.forEach(lead => {
+            let phone = "N/A";
             if (lead.request && lead.request.includes("Phone:")) {
-                const parts = lead.request.split("Phone:");
-                if (parts.length > 1) {
-                    phoneNum = parts[1].split("|")[0].trim();
-                }
+                phone = lead.request.split("Phone:")[1].split("|")[0].trim();
             }
-            if (customerName.includes("(")) {
-                customerName = customerName.split("(")[0].trim();
-            }
+            let name = lead.customer ? lead.customer.split("(")[0].trim() : "Direct Lead";
 
-            const card = document.createElement('div');
-            card.className = 'card';
-            card.innerHTML = `
-                <div>
-                    <div class="card-title">${lead.service || 'Lawn Care Request'}</div>
-                    <div class="card-detail"><span>Est. Job:</span> ${lead.estimated_job || 'N/A'}</div>
-                    <div class="card-detail"><span>Status:</span> ${lead.status || 'New'}</div>
-                </div>
-                <div class="contact-section">
-                    <button class="btn-contact" onclick="toggleContact(this)">Contact Info</button>
-                    <div class="contact-info-box">
-                        <p><strong>Name:</strong> ${customerName}</p>
-                        <p><strong>Phone:</strong> <span class="phone-highlight">${phoneNum}</span></p>
-                        <p><strong>Address:</strong> ${lead.location || 'Inland Empire, CA'}</p>
+            html += `
+                <li style="margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid #ddd;">
+                    <b>${lead.service || 'Service'}</b> (${lead.estimated_job || 'N/A'}) 
+                    <button onclick="toggleInfo(this)" style="margin-left: 10px; cursor: pointer;">Contact</button>
+                    <div class="info" style="display: none; margin-top: 5px; padding-left: 10px;">
+                        Name: ${name}<br>
+                        Phone: ${phone}<br>
+                        Address: ${lead.location || 'Inland Empire, CA'}
                     </div>
-                </div>
+                </li>
             `;
-            container.appendChild(card);
         });
+        html += '</ul>';
+        container.innerHTML = html;
     }
 
-    function toggleContact(button) {
-        const box = button.nextElementSibling;
-        if (box.style.display === 'block') {
-            box.style.display = 'none';
-            button.innerText = 'Contact Info';
-        } else {
-            box.style.display = 'block';
-            button.innerText = 'Hide Info';
-        }
+    function toggleInfo(btn) {
+        const infoDiv = btn.nextElementSibling;
+        infoDiv.style.display = infoDiv.style.display === 'none' ? 'block' : 'none';
     }
 
     loadLeads();
-    setInterval(loadLeads, 30000);
 </script>
 
 </body>
