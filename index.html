@@ -3,109 +3,133 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>D&R Services Lead Hunter</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>D&R Lead Hunter Dashboard</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-</head>
-<body class="min-h-screen bg-slate-950 text-slate-100 p-4 font-sans">
-    <div class="max-w-md mx-auto">
-        <header class="flex justify-between items-center mb-6 border-b border-slate-800 pb-4">
-            <div>
-                <h1 class="text-xl font-black tracking-wider text-amber-400">D&R SERVICES</h1>
-                <p class="text-xs text-slate-400 tracking-widest">LOT, JUNK & ABATEMENT HUNTER</p>
-            </div>
-            <span class="bg-emerald-950 text-emerald-400 border border-emerald-800 text-xs px-2.5 py-1 rounded-full font-medium">
-                LIVE
-            </span>
-        </header>
-
-        <div class="grid grid-cols-2 gap-3 mb-6">
-            <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl">
-                <p class="text-xs text-slate-400 uppercase">🔥 High-Ticket Targets</p>
-                <p id="hot-count" class="text-3xl font-bold text-amber-400 mt-1">0</p>
-            </div>
-            <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl">
-                <p class="text-xs text-slate-400 uppercase">🌱 Total Leads</p>
-                <p id="total-count" class="text-3xl font-bold text-emerald-400 mt-1">0</p>
-            </div>
-        </div>
-
-        <h2 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3">Incoming Target Queue</h2>
-        <div id="leads-list" class="space-y-3">
-            <p class="text-slate-500 text-sm">Scanning target zones...</p>
-        </div>
-    </div>
-
-    <script>
-        const SUPABASE_URL = 'https://grccpxhtwgctgwtjtejz.supabase.co';
-        const SUPABASE_ANON_KEY = 'sb_publishable_DSgli-s1kPh0zA4E-kT64A_6LiMrWg-';
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f6f9; margin: 0; padding: 20px; color: #333; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        h1 { color: #1e293b; text-align: center; margin-bottom: 30px; }
+        .lead-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
+        .lead-card { background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-left: 5px solid #2563eb; display: flex; flex-direction: column; justify-content: space-between; }
+        .lead-card h3 { margin-top: 0; color: #1e293b; font-size: 1.1rem; }
+        .lead-info { font-size: 0.9rem; margin-bottom: 10px; color: #475569; }
+        .lead-info span { font-weight: bold; color: #0f172a; }
+        .btn-contact { background-color: #2563eb; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; text-align: center; transition: background 0.2s; }
+        .btn-contact:hover { background-color: #1d4ed8; }
         
-        const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        /* Modal Styles */
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); justify-content: center; align-items: center; }
+        .modal-content { background: #fff; padding: 30px; border-radius: 8px; width: 90%; max-width: 500px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); position: relative; }
+        .close-btn { position: absolute; top: 15px; right: 20px; font-size: 1.5rem; cursor: pointer; color: #64748b; }
+        .modal-content h2 { margin-top: 0; color: #1e293b; }
+        .modal-row { margin-bottom: 15px; font-size: 0.95rem; }
+        .modal-row span { font-weight: bold; color: #0f172a; display: block; margin-bottom: 3px; color: #2563eb; }
+    </style>
+</head>
+<body>
 
-        async function loadDashboard() {
-            const { data: leads, error } = await db
-                .from('leads')
-                .select('*')
-                .order('score', { ascending: false });
+<div class="container">
+    <h1>Live Inland Empire Lead Dashboard</h1>
+    <div id="leads-container" class="lead-grid">
+        <p style="text-align: center; grid-column: 1 / -1;">Loading live leads from database...</p>
+    </div>
+</div>
 
-            const listEl = document.getElementById('leads-list');
-            
-            if (error) {
-                listEl.innerHTML = `<p class="text-red-400 text-sm">Error loading leads: ${error.message}</p>`;
-                return;
-            }
+<!-- Detailed Lead Modal -->
+<div id="leadModal" class="modal">
+    <div class="modal-content">
+        <span class="close-btn" onclick="closeModal()">&times;</span>
+        <h2 id="modal-service">Lead Details</h2>
+        <div class="modal-row"><span>Customer / Contact Name:</span> <p id="modal-customer"></p></div>
+        <div class="modal-row"><span>Direct Phone Number:</span> <p id="modal-phone" style="font-size: 1.2rem; font-weight: bold; color: #16a34a;"></p></div>
+        <div class="modal-row"><span>Location:</span> <p id="modal-location"></p></div>
+        <div class="modal-row"><span>Estimated Budget / Job Value:</span> <p id="modal-budget"></p></div>
+        <div class="modal-row"><span>Full Request Details & Pitch:</span> <p id="modal-request" style="background: #f8fafc; padding: 10px; border-radius: 5px; border: 1px solid #e2e8f0;"></p></div>
+    </div>
+</div>
 
-            if (!leads || leads.length === 0) {
-                listEl.innerHTML = `<p class="text-slate-500 text-sm">No active targets in database.</p>`;
-                document.getElementById('hot-count').innerText = '0';
-                document.getElementById('total-count').innerText = '0';
-                return;
-            }
+<script>
+    const SUPABASE_URL = "https://grccpxhtwgctgwtjtejz.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_DSgli-s1kPh0zA4E-kT64A_6LiMrWg-";
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-            // Expanded filter: Lot cleanups, junk removal, hauling, estate cleanouts, abatements, brush, weed
-            const isPriority = (l) => {
-                const text = ((l.service || '') + ' ' + (l.request || '')).toLowerCase();
-                return /lot|cleanup|abatement|junk|hauling|debris|cleanout|estate|brush|weed|overgrown|yard|acre/.test(text);
-            };
+    let allLeads = [];
 
-            document.getElementById('hot-count').innerText = leads.filter(isPriority).length;
-            document.getElementById('total-count').innerText = leads.length;
+    async function fetchLeads() {
+        const { data, error } = await supabaseClient
+            .from('leads')
+            .select('*')
+            .order('id', { ascending: false });
 
-            listEl.innerHTML = leads.map(lead => `
-                <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl relative">
-                    <div class="flex justify-between items-start mb-2">
-                        <span class="bg-amber-950 text-amber-400 border border-amber-800 text-xs px-2 py-0.5 rounded font-bold">🔥 Score: ${lead.score}</span>
-                        <span class="text-xs text-slate-400">${lead.location || 'Local'}</span>
-                    </div>
-                    <h3 class="font-bold text-white text-base">${lead.service}</h3>
-                    <p class="text-sm text-slate-300 mt-1">${lead.request}</p>
-                    <p class="text-xs text-amber-300/80 mt-2"><strong>Contact / Owner:</strong> ${lead.customer || 'Unassigned / Public Listing'}</p>
-                    <div class="mt-3 pt-3 border-t border-slate-800 flex justify-between items-center text-xs text-slate-400">
-                        <span>Est: <strong class="text-emerald-400">${lead.estimated_job || 'TBD'}</strong></span>
-                        <div class="space-x-1">
-                            <button onclick="callLead('${lead.customer || ''}')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-2.5 py-1.5 rounded-lg font-bold">Contact</button>
-                            <button onclick="deleteLead('${lead.id}')" class="bg-rose-950 hover:bg-rose-900 text-rose-400 border border-rose-800 px-2 py-1.5 rounded-lg font-semibold">Delete</button>
-                        </div>
-                    </div>
+        const container = document.getElementById('leads-container');
+        if (error) {
+            container.innerHTML = `<p style="color: red; text-align: center; grid-column: 1 / -1;">Error loading leads: ${error.message}</p>`;
+            return;
+        }
+
+        if (!data || data.length === 0) {
+            container.innerHTML = `<p style="text-align: center; grid-column: 1 / -1;">No leads found yet. Run your Python script to start capturing!</p>`;
+            return;
+        }
+
+        allLeads = data;
+        container.innerHTML = '';
+
+        data.forEach((lead) => {
+            const card = document.createElement('div');
+            card.className = 'lead-card';
+            card.innerHTML = `
+                <div>
+                    <h3>${lead.service || 'Service Request'}</h3>
+                    <div class="lead-info"><span>Location:</span> ${lead.location || 'N/A'}</div>
+                    <div class="lead-info"><span>Est. Job:</span> ${lead.estimated_job || 'N/A'}</div>
+                    <div class="lead-info"><span>Customer:</span> ${lead.customer || 'N/A'}</div>
                 </div>
-            `).join('');
-        }
+                <button class="btn-contact" onclick="openLeadModal(${lead.id})">View Contact & Details</button>
+            `;
+            container.appendChild(card);
+        });
+    }
 
-        async function deleteLead(id) {
-            if (!confirm('Permanently delete this lead and scrub its data?')) return;
-            const { error } = await db.from('leads').delete().eq('id', id);
-            if (error) {
-                alert('Error deleting lead: ' + error.message);
-            } else {
-                loadDashboard();
+    function openLeadModal(leadId) {
+        const lead = allLeads.find(l => l.id === leadId);
+        if (!lead) return;
+
+        document.getElementById('modal-service').innerText = lead.service || 'Lead Information';
+        document.getElementById('modal-customer').innerText = lead.customer || 'Not specified';
+        
+        // Extract phone number or show default if stored inline in request/customer strings
+        let phoneText = lead.customer;
+        if (lead.request && lead.request.includes("Phone:")) {
+            const parts = lead.request.split("Phone:");
+            if (parts.length > 1) {
+                phoneText = parts[1].split("|")[0].trim();
             }
         }
+        document.getElementById('modal-phone').innerText = phoneText || 'Check Details Below';
+        
+        document.getElementById('modal-location').innerText = lead.location || 'N/A';
+        document.getElementById('modal-budget').innerText = lead.estimated_job || 'N/A';
+        document.getElementById('modal-request').innerText = lead.request || 'No additional details provided.';
 
-        function callLead(name) {
-            alert(`Initiating direct outreach script for ${name}. Opening dialer...`);
+        document.getElementById('leadModal').style.display = 'flex';
+    }
+
+    function closeModal() {
+        document.getElementById('leadModal').style.display = 'none';
+    }
+
+    window.onclick = function(event) {
+        const modal = document.getElementById('leadModal');
+        if (event.target === modal) {
+            closeModal();
         }
+    }
 
-        loadDashboard();
-    </script>
+    // Load leads on startup and refresh every 30 seconds
+    fetchLeads();
+    setInterval(fetchLeads, 30000);
+</script>
+
 </body>
 </html>
