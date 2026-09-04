@@ -40,10 +40,10 @@
         const SUPABASE_URL = 'https://grccpxhtwgctgwtjtejz.supabase.co';
         const SUPABASE_ANON_KEY = 'sb_publishable_DSgli-s1kPh0zA4E-kT64A_6LiMrWg-';
         
-        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         async function loadDashboard() {
-            const { data: leads, error } = await supabase
+            const { data: leads, error } = await db
                 .from('leads')
                 .select('*')
                 .order('score', { ascending: false });
