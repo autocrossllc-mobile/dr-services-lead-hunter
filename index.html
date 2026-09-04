@@ -7,7 +7,6 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
-            --bg-primary: #0f172a;
             --bg-card: #ffffff;
             --text-main: #1e293b;
             --text-muted: #64748b;
@@ -34,7 +33,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 30px;
+            margin-bottom: 25px;
             border-bottom: 1px solid var(--border);
             padding-bottom: 20px;
         }
@@ -66,6 +65,38 @@
             border-radius: 50%;
         }
 
+        /* Category Tabs */
+        .tabs-nav {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 25px;
+            overflow-x: auto;
+            padding-bottom: 5px;
+        }
+
+        .tab-btn {
+            background: #e2e8f0;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: #475569;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .tab-btn:hover {
+            background: #cbd5e1;
+            color: #1e293b;
+        }
+
+        .tab-btn.active {
+            background: var(--accent);
+            color: white;
+        }
+
         .lead-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
@@ -81,11 +112,6 @@
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-
-        .lead-card:hover {
-            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05);
         }
 
         .card-top {
@@ -183,7 +209,7 @@
             font-weight: 700 !important;
         }
 
-        .loading-state, .empty-state {
+        .empty-state {
             grid-column: 1 / -1;
             text-align: center;
             padding: 40px;
@@ -200,8 +226,17 @@
         <div class="status-badge">Live Feed Active</div>
     </div>
 
+    <!-- Category Tabs -->
+    <div class="tabs-nav">
+        <button class="tab-btn active" onclick="filterCategory('all', this)">All Leads</button>
+        <button class="tab-btn" onclick="filterCategory('lawn', this)">Lawn Care</button>
+        <button class="tab-btn" onclick="filterCategory('abatement', this)">Abatement</button>
+        <button class="tab-btn" onclick="filterCategory('lot', this)">Lot Clean Up</button>
+        <button class="tab-btn" onclick="filterCategory('junk', this)">Junk Removal</button>
+    </div>
+
     <div id="leads-container" class="lead-grid">
-        <div class="loading-state">Synchronizing secure database feed...</div>
+        <div class="empty-state">Synchronizing secure database feed...</div>
     </div>
 </div>
 
@@ -210,28 +245,52 @@
     const SUPABASE_KEY = "sb_publishable_DSgli-s1kPh0zA4E-kT64A_6LiMrWg-";
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+    let allLeads = [];
+    let currentCategory = 'all';
+
     async function fetchLeads() {
         const { data, error } = await supabaseClient
             .from('leads')
             .select('*')
             .order('id', { ascending: false });
 
-        const container = document.getElementById('leads-container');
-        
         if (error) {
-            container.innerHTML = `<div class="empty-state" style="color: #dc2626;">Database connection error: ${error.message}</div>`;
+            document.getElementById('leads-container').innerHTML = `<div class="empty-state" style="color: #dc2626;">Database error: ${error.message}</div>`;
             return;
         }
 
-        if (!data || data.length === 0) {
-            container.innerHTML = `<div class="empty-state">No incoming leads detected yet. Your 24/7 background hunter is scanning...</div>`;
+        allLeads = data || [];
+        renderLeads();
+    }
+
+    function filterCategory(category, btn) {
+        currentCategory = category;
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        renderLeads();
+    }
+
+    function renderLeads() {
+        const container = document.getElementById('leads-container');
+        
+        // Filter leads based on selected category tab
+        let filtered = allLeads.filter(lead => {
+            const text = ((lead.service || '') + ' ' + (lead.request || '')).toLowerCase();
+            if (currentCategory === 'lawn') return text.includes('lawn') || text.includes('mow') || text.includes('grass') || text.includes('turf');
+            if (currentCategory === 'abatement') return text.includes('abatement') || text.includes('weed') || text.includes('brush') || text.includes('violation');
+            if (currentCategory === 'lot') return text.includes('lot') || text.includes('parcel') || text.includes('yard') || text.includes('clearing');
+            if (currentCategory === 'junk') return text.includes('junk') || text.includes('debris') || text.includes('pallets') || text.includes('haul');
+            return true; // 'all'
+        });
+
+        if (filtered.length === 0) {
+            container.innerHTML = `<div class="empty-state">No leads found in this category yet.</div>`;
             return;
         }
 
         container.innerHTML = '';
 
-        data.forEach(lead => {
-            // Clean extraction of fields
+        filtered.forEach(lead => {
             let phone = "Not Provided";
             if (lead.request && lead.request.includes("Phone:")) {
                 const parts = lead.request.split("Phone:");
@@ -249,7 +308,7 @@
             card.className = 'lead-card';
             card.innerHTML = `
                 <div class="card-top">
-                    <div class="service-title">${lead.service || 'Lawn Care Service Request'}</div>
+                    <div class="service-title">${lead.service || 'Service Request'}</div>
                     <div class="meta-row">
                         <span>Status:</span> 
                         <span style="color: var(--success); font-weight: 600;">${lead.status || 'New'}</span>
