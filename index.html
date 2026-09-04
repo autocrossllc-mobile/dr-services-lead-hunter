@@ -65,7 +65,6 @@
             border-radius: 50%;
         }
 
-        /* Category Tabs */
         .tabs-nav {
             display: flex;
             gap: 10px;
@@ -133,11 +132,6 @@
             margin-bottom: 6px;
         }
 
-        .meta-row span {
-            font-weight: 600;
-            color: #334155;
-        }
-
         .budget-tag {
             background: #eff6ff;
             color: #1d4ed8;
@@ -153,35 +147,16 @@
             margin-top: auto;
         }
 
-        .btn-toggle {
-            background: var(--accent);
-            color: white;
-            border: none;
-            width: 100%;
-            padding: 10px;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            font-size: 0.9rem;
-            transition: background 0.2s;
-        }
-
-        .btn-toggle:hover {
-            background: var(--accent-hover);
-        }
-
         .contact-panel {
-            display: none;
             background: #f8fafc;
             border: 1px solid var(--border);
             border-radius: 8px;
             padding: 14px;
-            margin-top: 12px;
             font-size: 0.9rem;
         }
 
         .contact-panel .row {
-            margin-bottom: 8px;
+            margin-bottom: 10px;
         }
 
         .contact-panel .row:last-child {
@@ -205,8 +180,13 @@
 
         .phone-val {
             color: var(--success) !important;
-            font-size: 1.05rem;
+            font-size: 1.1rem;
             font-weight: 700 !important;
+        }
+
+        .email-val {
+            color: var(--accent);
+            text-decoration: underline;
         }
 
         .empty-state {
@@ -273,14 +253,13 @@
     function renderLeads() {
         const container = document.getElementById('leads-container');
         
-        // Filter leads based on selected category tab
         let filtered = allLeads.filter(lead => {
             const text = ((lead.service || '') + ' ' + (lead.request || '')).toLowerCase();
             if (currentCategory === 'lawn') return text.includes('lawn') || text.includes('mow') || text.includes('grass') || text.includes('turf');
             if (currentCategory === 'abatement') return text.includes('abatement') || text.includes('weed') || text.includes('brush') || text.includes('violation');
-            if (currentCategory === 'lot') return text.includes('lot') || text.includes('parcel') || text.includes('yard') || text.includes('clearing');
-            if (currentCategory === 'junk') return text.includes('junk') || text.includes('debris') || text.includes('pallets') || text.includes('haul');
-            return true; // 'all'
+            if (currentCategory === 'lot') return text.includes('lot') || text.includes('parcel') || text.includes('clearing') || text.includes('grading');
+            if (currentCategory === 'junk') return text.includes('junk') || text.includes('debris') || text.includes('pallets') || text.includes('hauling');
+            return true;
         });
 
         if (filtered.length === 0) {
@@ -291,11 +270,26 @@
         container.innerHTML = '';
 
         filtered.forEach(lead => {
+            // Robust parsing for phone and email from the request string
             let phone = "Not Provided";
-            if (lead.request && lead.request.includes("Phone:")) {
-                const parts = lead.request.split("Phone:");
-                if (parts.length > 1) {
-                    phone = parts[1].split("|")[0].trim();
+            let email = "Not Provided";
+            
+            if (lead.request) {
+                if (lead.request.includes("Phone:")) {
+                    try {
+                        const parts = lead.request.split("Phone:");
+                        if (parts.length > 1) {
+                            phone = parts[1].split("|")[0].trim();
+                        }
+                    } catch(e) {}
+                }
+                if (lead.request.includes("Email:")) {
+                    try {
+                        const parts = lead.request.split("Email:");
+                        if (parts.length > 1) {
+                            email = parts[1].split("|")[0].trim();
+                        }
+                    } catch(e) {}
                 }
             }
             
@@ -319,17 +313,20 @@
                     </div>
                 </div>
                 <div class="card-actions">
-                    <button class="btn-toggle" onclick="toggleContact(this)">Contact Info</button>
                     <div class="contact-panel">
                         <div class="row">
-                            <label>Customer Name</label>
+                            <label>Company / Contact Name</label>
                             <value>${name}</value>
                         </div>
-                        <div class="row" style="margin-top: 8px;">
+                        <div class="row">
                             <label>Direct Phone Number</label>
-                            <value class="phone-val">${phone}</value>
+                            <value class="phone-val"><a href="tel:${phone}" style="color: #16a34a; text-decoration: none;">📞 ${phone}</a></value>
                         </div>
-                        <div class="row" style="margin-top: 8px;">
+                        <div class="row">
+                            <label>Direct Email Address</label>
+                            <value><a href="mailto:${email}" class="email-val">${email}</a></value>
+                        </div>
+                        <div class="row">
                             <label>Service Address / Location</label>
                             <value>${lead.location || 'Inland Empire, CA'}</value>
                         </div>
@@ -338,19 +335,6 @@
             `;
             container.appendChild(card);
         });
-    }
-
-    function toggleContact(button) {
-        const panel = button.nextElementSibling;
-        if (panel.style.display === 'block') {
-            panel.style.display = 'none';
-            button.innerText = 'Contact Info';
-            button.style.backgroundColor = '#2563eb';
-        } else {
-            panel.style.display = 'block';
-            button.innerText = 'Hide Details';
-            button.style.backgroundColor = '#475569';
-        }
     }
 
     fetchLeads();
