@@ -3,343 +3,353 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>D&R Lead Command Center</title>
+    <title>D&R Property Leads Dashboard</title>
+    <!-- Supabase JS Client -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
-            --bg-card: #ffffff;
-            --text-main: #1e293b;
-            --text-muted: #64748b;
-            --accent: #2563eb;
-            --accent-hover: #1d4ed8;
-            --success: #16a34a;
-            --border: #e2e8f0;
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --card-border: #334155;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent-blue: #38bdf8;
+            --accent-green: #22c55e;
+            --accent-red: #ef4444;
+            --accent-hover: #dc2626;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: #f8fafc;
+            background-color: var(--bg-color);
             color: var(--text-main);
-            margin: 0;
-            padding: 30px;
+            padding: 2rem 1rem;
+            min-height: 100vh;
         }
 
         .container {
-            max-width: 1200px;
+            max-width: 1100px;
             margin: 0 auto;
         }
 
-        .header {
+        header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 25px;
-            border-bottom: 1px solid var(--border);
-            padding-bottom: 20px;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--card-border);
         }
 
-        .header h1 {
-            font-size: 1.5rem;
+        .title-group h1 {
+            font-size: 1.75rem;
             font-weight: 700;
-            color: #0f172a;
-            margin: 0;
+            letter-spacing: -0.025em;
         }
 
-        .status-badge {
-            background: #dcfce7;
-            color: #166534;
-            padding: 6px 12px;
-            border-radius: 20px;
+        .title-group p {
+            color: var(--text-muted);
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+        }
+
+        .actions {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .badge {
+            background: rgba(56, 189, 248, 0.1);
+            color: var(--accent-blue);
+            border: 1px solid rgba(56, 189, 248, 0.2);
+            padding: 0.35rem 0.75rem;
+            border-radius: 9999px;
             font-size: 0.85rem;
             font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 6px;
         }
 
-        .status-badge::before {
-            content: "";
-            width: 8px;
-            height: 8px;
-            background-color: #22c55e;
-            border-radius: 50%;
-        }
-
-        .tabs-nav {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 25px;
-            overflow-x: auto;
-            padding-bottom: 5px;
-        }
-
-        .tab-btn {
-            background: #e2e8f0;
-            border: none;
-            padding: 10px 18px;
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 0.9rem;
-            color: #475569;
+        .btn-refresh {
+            background: var(--card-bg);
+            color: var(--text-main);
+            border: 1px solid var(--card-border);
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
             cursor: pointer;
-            transition: all 0.2s;
-            white-space: nowrap;
+            font-weight: 500;
+            transition: all 0.2s ease;
         }
 
-        .tab-btn:hover {
-            background: #cbd5e1;
-            color: #1e293b;
+        .btn-refresh:hover {
+            background: #2d3748;
         }
 
-        .tab-btn.active {
-            background: var(--accent);
-            color: white;
-        }
-
-        .lead-grid {
+        .leads-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-            gap: 20px;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 1.25rem;
         }
 
         .lead-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 24px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 0.75rem;
+            padding: 1.25rem;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s ease, border-color 0.2s ease;
         }
 
-        .card-top {
-            margin-bottom: 16px;
+        .lead-card:hover {
+            transform: translateY(-2px);
+            border-color: #475569;
         }
 
-        .service-title {
-            font-size: 1.1rem;
-            font-weight: 700;
-            color: #0f172a;
-            margin-bottom: 8px;
-        }
-
-        .meta-row {
+        .card-header {
             display: flex;
             justify-content: space-between;
-            font-size: 0.9rem;
-            color: var(--text-muted);
-            margin-bottom: 6px;
+            align-items: flex-start;
+            margin-bottom: 0.75rem;
         }
 
-        .budget-tag {
-            background: #eff6ff;
-            color: #1d4ed8;
-            padding: 4px 8px;
-            border-radius: 6px;
-            font-weight: 700;
+        .service-type {
             font-size: 0.85rem;
-        }
-
-        .card-actions {
-            border-top: 1px solid var(--border);
-            padding-top: 16px;
-            margin-top: auto;
-        }
-
-        .contact-panel {
-            background: #f8fafc;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 14px;
-            font-size: 0.9rem;
-        }
-
-        .contact-panel .row {
-            margin-bottom: 10px;
-        }
-
-        .contact-panel .row:last-child {
-            margin-bottom: 0;
-        }
-
-        .contact-panel label {
-            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--accent-blue);
             text-transform: uppercase;
             letter-spacing: 0.05em;
+        }
+
+        .est-job {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--accent-green);
+            background: rgba(34, 197, 94, 0.1);
+            padding: 0.2rem 0.5rem;
+            border-radius: 0.25rem;
+        }
+
+        .request-details {
+            font-size: 0.95rem;
+            line-height: 1.5;
+            color: var(--text-main);
+            margin-bottom: 1rem;
+            word-break: break-word;
+        }
+
+        .meta-info {
+            font-size: 0.8rem;
             color: var(--text-muted);
-            display: block;
-            margin-bottom: 2px;
+            margin-bottom: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
         }
 
-        .contact-panel value {
+        .card-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 0.75rem;
+            border-top: 1px solid var(--card-border);
+        }
+
+        .status-pill {
+            font-size: 0.75rem;
             font-weight: 600;
-            color: #0f172a;
-            display: block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.375rem;
+            background: #334155;
+            color: #cbd5e1;
         }
 
-        .phone-val {
-            color: var(--success) !important;
-            font-size: 1.1rem;
-            font-weight: 700 !important;
+        .btn-delete {
+            background: transparent;
+            color: var(--accent-red);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            padding: 0.4rem 0.75rem;
+            border-radius: 0.375rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
         }
 
-        .email-val {
-            color: var(--accent);
-            text-decoration: underline;
+        .btn-delete:hover {
+            background: var(--accent-red);
+            color: #ffffff;
         }
 
         .empty-state {
             grid-column: 1 / -1;
             text-align: center;
-            padding: 40px;
+            padding: 4rem 1rem;
             color: var(--text-muted);
-            font-size: 1rem;
+            background: var(--card-bg);
+            border: 1px dashed var(--card-border);
+            border-radius: 0.75rem;
+        }
+
+        .loading {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 3rem;
+            color: var(--text-muted);
         }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <div class="header">
-        <h1>D&R Lead Command Center</h1>
-        <div class="status-badge">Live Feed Active</div>
+    <div class="container">
+        <header>
+            <div class="title-group">
+                <h1>D&R Lead Operations Dashboard</h1>
+                <p>Live San Bernardino Parcel & Abatement Records</p>
+            </div>
+            <div class="actions">
+                <span id="lead-count" class="badge">0 Leads Loaded</span>
+                <button class="btn-refresh" onclick="loadLeads()">🔄 Refresh</button>
+            </div>
+        </header>
+
+        <main id="leads-container" class="leads-grid">
+            <div class="loading">Fetching verified leads from database...</div>
+        </main>
     </div>
 
-    <!-- Category Tabs -->
-    <div class="tabs-nav">
-        <button class="tab-btn active" onclick="filterCategory('all', this)">All Leads</button>
-        <button class="tab-btn" onclick="filterCategory('lawn', this)">Lawn Care</button>
-        <button class="tab-btn" onclick="filterCategory('abatement', this)">Abatement</button>
-        <button class="tab-btn" onclick="filterCategory('lot', this)">Lot Clean Up</button>
-        <button class="tab-btn" onclick="filterCategory('junk', this)">Junk Removal</button>
-    </div>
+    <script>
+        // Supabase Client Initialization
+        const SUPABASE_URL = "https://grccpxhtwgctgwtjtejz.supabase.co";
+        const SUPABASE_KEY = "sb_publishable_DSgli-s1kPh0zA4E-kT64A_6LiMrWg-";
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    <div id="leads-container" class="lead-grid">
-        <div class="empty-state">Synchronizing secure database feed...</div>
-    </div>
-</div>
+        // Fetch & Render Leads
+        async function loadLeads() {
+            const container = document.getElementById('leads-container');
+            container.innerHTML = '<div class="loading">Fetching verified leads from database...</div>';
 
-<script>
-    const SUPABASE_URL = "https://grccpxhtwgctgwtjtejz.supabase.co";
-    const SUPABASE_KEY = "sb_publishable_DSgli-s1kPh0zA4E-kT64A_6LiMrWg-";
-    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+            try {
+                const { data: leads, error } = await supabaseClient
+                    .from('leads')
+                    .select('*')
+                    .order('id', { ascending: false });
 
-    let allLeads = [];
-    let currentCategory = 'all';
+                if (error) throw error;
 
-    async function fetchLeads() {
-        const { data, error } = await supabaseClient
-            .from('leads')
-            .select('*')
-            .order('id', { ascending: false });
+                document.getElementById('lead-count').innerText = `${leads.length} Leads Total`;
 
-        if (error) {
-            document.getElementById('leads-container').innerHTML = `<div class="empty-state" style="color: #dc2626;">Database error: ${error.message}</div>`;
-            return;
+                if (!leads || leads.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <h2>No Active Leads Found</h2>
+                            <p>Run your hunter.py pipeline to pull new parcel records.</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                container.innerHTML = '';
+                leads.forEach(lead => {
+                    const card = document.createElement('div');
+                    card.className = 'lead-card';
+                    card.id = `lead-${lead.id}`;
+
+                    card.innerHTML = `
+                        <div>
+                            <div class="card-header">
+                                <span class="service-type">${escapeHtml(lead.service || 'Property Lead')}</span>
+                                <span class="est-job">${escapeHtml(lead.estimated_job || '$1,500 Est.')}</span>
+                            </div>
+                            <div class="request-details">
+                                ${escapeHtml(lead.request || 'No details provided.')}
+                            </div>
+                            <div class="meta-info">
+                                <span>📍 <strong>Location:</strong> ${escapeHtml(lead.location || 'Inland Empire')}</span>
+                                <span>👤 <strong>Record:</strong> ${escapeHtml(lead.customer || 'County Record')}</span>
+                            </div>
+                        </div>
+                        <div class="card-footer">
+                            <span class="status-pill">${escapeHtml(lead.status || 'Active')}</span>
+                            <button class="btn-delete" onclick="deleteLead('${lead.id}')">
+                                🗑️ Delete
+                            </button>
+                        </div>
+                    `;
+                    container.appendChild(card);
+                });
+
+            } catch (err) {
+                console.error("Fetch Error:", err);
+                container.innerHTML = `<div class="empty-state" style="color: var(--accent-red);">Error loading leads: ${err.message}</div>`;
+            }
         }
 
-        allLeads = data || [];
-        renderLeads();
-    }
+        // Delete Lead Function
+        async function deleteLead(leadId) {
+            if (!confirm("Are you sure you want to permanently delete this lead?")) {
+                return;
+            }
 
-    function filterCategory(category, btn) {
-        currentCategory = category;
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        renderLeads();
-    }
+            try {
+                const { error } = await supabaseClient
+                    .from('leads')
+                    .delete()
+                    .eq('id', leadId);
 
-    function renderLeads() {
-        const container = document.getElementById('leads-container');
-        
-        let filtered = allLeads.filter(lead => {
-            const text = ((lead.service || '') + ' ' + (lead.request || '')).toLowerCase();
-            if (currentCategory === 'lawn') return text.includes('lawn') || text.includes('mow') || text.includes('grass') || text.includes('turf');
-            if (currentCategory === 'abatement') return text.includes('abatement') || text.includes('weed') || text.includes('brush') || text.includes('violation');
-            if (currentCategory === 'lot') return text.includes('lot') || text.includes('parcel') || text.includes('clearing') || text.includes('grading');
-            if (currentCategory === 'junk') return text.includes('junk') || text.includes('debris') || text.includes('pallets') || text.includes('hauling');
-            return true;
-        });
+                if (error) {
+                    alert("Failed to delete lead: " + error.message);
+                    return;
+                }
 
-        if (filtered.length === 0) {
-            container.innerHTML = `<div class="empty-state">No leads found in this category yet.</div>`;
-            return;
+                // Remove element from UI instantly
+                const cardElement = document.getElementById(`lead-${leadId}`);
+                if (cardElement) {
+                    cardElement.remove();
+                }
+
+                // Update counter
+                const currentCountElem = document.getElementById('lead-count');
+                const currentCount = parseInt(currentCountElem.innerText) || 1;
+                const newCount = Math.max(0, currentCount - 1);
+                currentCountElem.innerText = `${newCount} Leads Total`;
+
+                if (newCount === 0) {
+                    document.getElementById('leads-container').innerHTML = `
+                        <div class="empty-state">
+                            <h2>No Active Leads Found</h2>
+                            <p>Run your hunter.py pipeline to pull new parcel records.</p>
+                        </div>
+                    `;
+                }
+
+            } catch (err) {
+                alert("Delete Error: " + err.message);
+            }
         }
 
-        container.innerHTML = '';
+        // Helper to prevent XSS
+        function escapeHtml(str) {
+            return String(str)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
 
-        filtered.forEach(lead => {
-            // Robust parsing for phone and email from the request string
-            let phone = "Not Provided";
-            let email = "Not Provided";
-            
-            if (lead.request) {
-                if (lead.request.includes("Phone:")) {
-                    try {
-                        const parts = lead.request.split("Phone:");
-                        if (parts.length > 1) {
-                            phone = parts[1].split("|")[0].trim();
-                        }
-                    } catch(e) {}
-                }
-                if (lead.request.includes("Email:")) {
-                    try {
-                        const parts = lead.request.split("Email:");
-                        if (parts.length > 1) {
-                            email = parts[1].split("|")[0].trim();
-                        }
-                    } catch(e) {}
-                }
-            }
-            
-            let name = lead.customer || "Direct Prospect";
-            if (name.includes("(")) {
-                name = name.split("(")[0].trim();
-            }
-
-            const card = document.createElement('div');
-            card.className = 'lead-card';
-            card.innerHTML = `
-                <div class="card-top">
-                    <div class="service-title">${lead.service || 'Service Request'}</div>
-                    <div class="meta-row">
-                        <span>Status:</span> 
-                        <span style="color: var(--success); font-weight: 600;">${lead.status || 'New'}</span>
-                    </div>
-                    <div class="meta-row" style="align-items: center; margin-top: 10px;">
-                        <span>Est. Budget:</span>
-                        <div class="budget-tag">${lead.estimated_job || 'Negotiable'}</div>
-                    </div>
-                </div>
-                <div class="card-actions">
-                    <div class="contact-panel">
-                        <div class="row">
-                            <label>Company / Contact Name</label>
-                            <value>${name}</value>
-                        </div>
-                        <div class="row">
-                            <label>Direct Phone Number</label>
-                            <value class="phone-val"><a href="tel:${phone}" style="color: #16a34a; text-decoration: none;">📞 ${phone}</a></value>
-                        </div>
-                        <div class="row">
-                            <label>Direct Email Address</label>
-                            <value><a href="mailto:${email}" class="email-val">${email}</a></value>
-                        </div>
-                        <div class="row">
-                            <label>Service Address / Location</label>
-                            <value>${lead.location || 'Inland Empire, CA'}</value>
-                        </div>
-                    </div>
-                </div>
-            `;
-            container.appendChild(card);
-        });
-    }
-
-    fetchLeads();
-    setInterval(fetchLeads, 15000);
-</script>
-
+        // Auto-load leads on page load
+        window.addEventListener('DOMContentLoaded', loadLeads);
+    </script>
 </body>
 </html>
