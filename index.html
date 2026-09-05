@@ -3,23 +3,24 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Lawn Care Route & Search Engine</title>
+  <title>AutoCross & Lawn Prospect Dashboard</title>
   <style>
+    * { box-sizing: border-box; }
     body {
       font-family: Arial, sans-serif;
-      background-color: #f8f9fa;
+      background-color: #f4f6f8;
       color: #212529;
       margin: 0;
       padding: 15px;
     }
 
     .container {
-      max-width: 950px;
+      max-width: 1050px;
       margin: 0 auto;
       background: #ffffff;
       padding: 20px;
       border-radius: 8px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
     }
 
     .header {
@@ -38,9 +39,46 @@
       margin: 0;
     }
 
-    .search-box-row {
-      margin: 15px 0 10px 0;
+    .date-badge {
+      background: #e8f5e9;
+      color: #1b5e20;
+      padding: 5px 12px;
+      border-radius: 15px;
+      font-size: 13px;
+      font-weight: bold;
+    }
+
+    /* Tabs Styling */
+    .tabs {
       display: flex;
+      gap: 8px;
+      margin-top: 15px;
+      border-bottom: 1px solid #dee2e6;
+      flex-wrap: wrap;
+    }
+
+    .tab-btn {
+      background-color: #e9ecef;
+      border: none;
+      padding: 10px 18px;
+      font-size: 14px;
+      font-weight: bold;
+      color: #495057;
+      border-radius: 6px 6px 0 0;
+      cursor: pointer;
+    }
+
+    .tab-btn.active {
+      background-color: #2e7d32;
+      color: white;
+    }
+
+    /* Controls & Search */
+    .toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 15px 0;
       gap: 10px;
       flex-wrap: wrap;
     }
@@ -48,27 +86,23 @@
     .search-input {
       flex: 1;
       min-width: 260px;
-      padding: 12px 15px;
-      font-size: 15px;
+      padding: 10px 14px;
+      font-size: 14px;
       border: 2px solid #2e7d32;
       border-radius: 6px;
       outline: none;
-    }
-
-    .search-input:focus {
-      box-shadow: 0 0 5px rgba(46, 125, 50, 0.4);
     }
 
     .btn-route {
       background-color: #2e7d32;
       color: white;
       border: none;
-      padding: 12px 18px;
+      padding: 10px 16px;
       border-radius: 6px;
       font-weight: bold;
       cursor: pointer;
-      text-decoration: none;
       font-size: 14px;
+      text-decoration: none;
       white-space: nowrap;
     }
 
@@ -76,21 +110,16 @@
       background-color: #1b5e20;
     }
 
-    .meta-status {
-      font-size: 13px;
-      color: #6c757d;
-      margin-bottom: 10px;
-    }
-
+    /* Tables */
     table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 10px;
+      margin-top: 5px;
     }
 
     th, td {
       text-align: left;
-      padding: 12px 10px;
+      padding: 11px 10px;
       border-bottom: 1px solid #dee2e6;
       font-size: 14px;
     }
@@ -111,6 +140,16 @@
       width: 50px;
     }
 
+    .tag-service {
+      display: inline-block;
+      padding: 2px 8px;
+      background: #f0f4f8;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: bold;
+      color: #334e68;
+    }
+
     .nav-btn {
       color: #1a73e8;
       text-decoration: none;
@@ -120,6 +159,12 @@
     .nav-btn:hover {
       text-decoration: underline;
     }
+
+    .meta-status {
+      font-size: 13px;
+      color: #6c757d;
+      margin-bottom: 8px;
+    }
   </style>
 </head>
 <body>
@@ -127,36 +172,48 @@
   <div class="container">
     <div class="header">
       <div>
-        <h1>🌱 Lawn Prospect Driving Sheet & Search</h1>
-        <p style="font-size: 13px; color: #6c757d; margin-top: 4px;">Street-by-street routing with live search filtering</p>
+        <h1>🎯 Lead Manager & Route Navigator</h1>
+        <p style="font-size: 13px; color: #6c757d; margin-top: 4px;">Categorized leads with automated daily route planning</p>
       </div>
-      <button class="btn-route" id="launch-maps-btn">🗺️ Route Filtered Stops</button>
+      <span class="date-badge" id="current-date">Today's Date</span>
     </div>
 
-    <div class="search-box-row">
+    <!-- TABS NAVIGATION -->
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('daily-route', event)">🚗 Today's Auto-Route</button>
+      <button class="tab-btn" onclick="switchTab('lawn-prospects', event)">🌱 Lawn Prospects</button>
+      <button class="tab-btn" onclick="switchTab('service-leads', event)">🔧 Other / Service Leads</button>
+      <button class="tab-btn" onclick="switchTab('all-leads', event)">📋 Master Database</button>
+    </div>
+
+    <!-- TOOLBAR (Search + Route Launch) -->
+    <div class="toolbar">
       <input 
         type="text" 
         id="search-bar" 
         class="search-input" 
-        placeholder="🔍 Type street name, house #, owner name, or phone number..." 
+        placeholder="🔍 Search current tab by street, owner name, service, or phone..." 
       />
+      <button class="btn-route" id="launch-maps-btn">🗺️ Open Multi-Stop Route</button>
     </div>
 
-    <div class="meta-status" id="results-count">Loading leads dataset...</div>
+    <div class="meta-status" id="tab-status">Loading leads...</div>
 
+    <!-- TABLE -->
     <table>
       <thead>
-        <tr>
+        <tr id="table-head">
           <th class="stop-num">Stop</th>
-          <th>Property Address</th>
-          <th>Homeowner</th>
-          <th>Phone</th>
+          <th>Property / Address</th>
+          <th>Contact Name</th>
+          <th>Phone Number</th>
+          <th>Category / Service</th>
           <th>Action</th>
         </tr>
       </thead>
-      <tbody id="route-table-body">
+      <tbody id="table-body">
         <tr>
-          <td colspan="5">Loading address database...</td>
+          <td colspan="6">Loading database records...</td>
         </tr>
       </tbody>
     </table>
@@ -167,6 +224,11 @@
     const SUPABASE_KEY = "sb_publishable_DSgli-s1kPh0zA4E-kT64A_6LiMrWg-";
 
     let allLeads = [];
+    let currentTab = 'daily-route';
+
+    // Display formatted current date
+    const today = new Date();
+    document.getElementById("current-date").innerText = `📅 ${today.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}`;
 
     function parseAddress(addrStr) {
       if (!addrStr) return ['', 0];
@@ -174,63 +236,96 @@
       return match ? [match[2].toLowerCase(), parseInt(match[1], 10)] : [addrStr.toLowerCase(), 0];
     }
 
-    async function fetchAllLeads() {
-      const tbody = document.getElementById("route-table-body");
-      const statusText = document.getElementById("results-count");
-
+    async function loadData() {
       try {
-        const response = await fetch(`${SUPABASE_URL}/rest/v1/leads?service=like.*Lawn%20Care*`, {
+        const response = await fetch(`${SUPABASE_URL}/rest/v1/leads?select=*&order=created_at.desc`, {
           headers: {
             "apikey": SUPABASE_KEY,
             "Authorization": `Bearer ${SUPABASE_KEY}`
           }
         });
-        
         allLeads = await response.json();
-
-        if (!allLeads || allLeads.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="5">No prospects found in database.</td></tr>';
-          statusText.innerText = "0 prospects found.";
-          return;
-        }
-
-        filterAndRender();
-
+        renderTab();
       } catch (err) {
-        tbody.innerHTML = `<tr><td colspan="5" style="color:red;">Error loading route: ${err.message}</td></tr>`;
+        document.getElementById("table-body").innerHTML = `<tr><td colspan="6" style="color:red;">Error loading leads: ${err.message}</td></tr>`;
       }
     }
 
-    function filterAndRender() {
+    function switchTab(tabId, event) {
+      currentTab = tabId;
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      event.target.classList.add('active');
+      document.getElementById("search-bar").value = "";
+      renderTab();
+    }
+
+    function renderTab() {
       const query = document.getElementById("search-bar").value.toLowerCase().trim();
-      const tbody = document.getElementById("route-table-body");
-      const statusText = document.getElementById("results-count");
+      const tbody = document.getElementById("table-body");
+      const statusText = document.getElementById("tab-status");
 
-      // Search engine logic: filter across address, customer name, and phone
-      const filtered = allLeads.filter(lead => {
-        const addr = (lead.request || "").toLowerCase();
-        const customer = (lead.customer || "").toLowerCase();
-        const phone = (lead.mobile_phones || "").toLowerCase();
-        return addr.includes(query) || customer.includes(query) || phone.includes(query);
-      });
+      let filtered = [];
 
-      // Sort street-by-street (Street Name first, then House Number)
-      filtered.sort((a, b) => {
-        const [streetA, numA] = parseAddress(a.request);
-        const [streetB, numB] = parseAddress(b.request);
-        return streetA.localeCompare(streetB) || (numA - numB);
-      });
+      // 1. FILTER BY TAB CATEGORY
+      if (currentTab === 'daily-route') {
+        // Automatically selects active Lawn Prospects and generates a daily street-by-street batch
+        const lawnLeads = allLeads.filter(l => (l.service || '').toLowerCase().includes('lawn care'));
+        
+        // Deterministic daily rotation seed using day of year
+        const dayOfYear = Math.floor((today - new Date(today.getFullYear(), 0, 0)) / (1000 * 60 * 60 * 24));
+        const batchSize = 10;
+        const startIndex = (dayOfYear * batchSize) % (lawnLeads.length || 1);
+        
+        // Take today's slice or fallback to all lawn leads if small dataset
+        let todaysBatch = lawnLeads.slice(startIndex, startIndex + batchSize);
+        if (todaysBatch.length < 5) todaysBatch = lawnLeads.slice(0, batchSize);
 
+        // Sort street-by-street for driving efficiency
+        todaysBatch.sort((a, b) => {
+          const [streetA, numA] = parseAddress(a.request);
+          const [streetB, numB] = parseAddress(b.request);
+          return streetA.localeCompare(streetB) || (numA - numB);
+        });
+
+        filtered = todaysBatch;
+
+      } else if (currentTab === 'lawn-prospects') {
+        filtered = allLeads.filter(l => (l.service || '').toLowerCase().includes('lawn care'));
+      } else if (currentTab === 'service-leads') {
+        filtered = allLeads.filter(l => !(l.service || '').toLowerCase().includes('lawn care'));
+      } else {
+        filtered = [...allLeads];
+      }
+
+      // 2. APPLY SEARCH QUERY FILTER
+      if (query) {
+        filtered = filtered.filter(l => {
+          const addr = (l.request || "").toLowerCase();
+          const name = (l.customer || "").toLowerCase();
+          const phone = (l.mobile_phones || "").toLowerCase();
+          const srv = (l.service || "").toLowerCase();
+          return addr.includes(query) || name.includes(query) || phone.includes(query) || srv.includes(query);
+        });
+      }
+
+      // 3. RENDER TABLE
       tbody.innerHTML = "";
       const routeAddresses = [];
 
       if (filtered.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5">No matching addresses found.</td></tr>';
-        statusText.innerText = `0 matches found out of ${allLeads.length} total prospects.`;
+        tbody.innerHTML = '<tr><td colspan="6">No leads found for this view.</td></tr>';
+        statusText.innerText = `0 items in view.`;
         return;
       }
 
-      statusText.innerText = `Showing ${filtered.length} of ${allLeads.length} prospects (sorted by street name & house number).`;
+      const tabNames = {
+        'daily-route': '🚗 Today\'s Auto-Generated Route (Street-Ordered)',
+        'lawn-prospects': '🌱 All Lawn Care Prospects',
+        'service-leads': '🔧 Other / General Service Requests',
+        'all-leads': '📋 All Master Database Records'
+      };
+
+      statusText.innerText = `${tabNames[currentTab]} — Showing ${filtered.length} entries.`;
 
       filtered.forEach((lead, idx) => {
         const addr = lead.request || "N/A";
@@ -242,6 +337,7 @@
           <td><strong>${addr}</strong></td>
           <td>${lead.customer || 'Current Owner'}</td>
           <td>${lead.mobile_phones || '—'}</td>
+          <td><span class="tag-service">${lead.service || 'General Inquiry'}</span></td>
           <td>
             <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addr)}" target="_blank" class="nav-btn">
               📍 Navigate
@@ -251,22 +347,22 @@
         tbody.appendChild(row);
       });
 
-      // Update multi-stop Google Maps button to launch route for active search results
+      // Update multi-stop navigation link for active items
       document.getElementById("launch-maps-btn").onclick = () => {
         if (routeAddresses.length > 0) {
           const stops = routeAddresses.slice(0, 10).map(a => encodeURIComponent(a)).join("/");
           window.open(`https://www.google.com/maps/dir/${stops}`, "_blank");
         } else {
-          alert("No valid addresses available in current search filter.");
+          alert("No addresses available in current view.");
         }
       };
     }
 
-    // Attach real-time search listener
-    document.getElementById("search-bar").addEventListener("input", filterAndRender);
+    // Attach search listener
+    document.getElementById("search-bar").addEventListener("input", renderTab);
 
     // Initial load
-    fetchAllLeads();
+    loadData();
   </script>
 </body>
 </html>
