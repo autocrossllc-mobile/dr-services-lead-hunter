@@ -1,220 +1,211 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>D&R Lead Dispatch & Property Lookup Dashboard</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <style>
-        :root {
-            --bg-dark: #090d16;
-            --panel-bg: #131c2e;
-            --border-color: #1e2d4a;
-            --text-main: #f1f5f9;
-            --text-sub: #94a3b8;
-            --accent-cyan: #38bdf8;
-            --accent-green: #22c55e;
-            --accent-red: #ef4444;
-            --accent-purple: #a855f7;
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lawn Care Lead & Route Dashboard</title>
+  <style>
+    :root {
+      --primary: #2e7d32;
+      --primary-dark: #1b5e20;
+      --bg: #f4f6f8;
+      --card-bg: #ffffff;
+      --text: #333333;
+      --border: #e0e0e0;
+    }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
-        body { background: var(--bg-dark); color: var(--text-main); padding: 1.5rem; min-height: 100vh; }
-        .container { max-width: 1350px; margin: 0 auto; }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background-color: var(--bg); color: var(--text); padding: 20px; }
 
-        header {
-            display: flex; justify-content: space-between; align-items: center;
-            padding-bottom: 1.5rem; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-color);
-            flex-wrap: wrap; gap: 1rem;
-        }
+    .header { background: var(--primary-dark); color: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+    .header h1 { font-size: 24px; margin-bottom: 5px; }
 
-        .header-title h1 { font-size: 1.75rem; font-weight: 700; color: #fff; }
-        .header-title p { color: var(--text-sub); font-size: 0.875rem; margin-top: 0.25rem; }
+    .tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid var(--border); padding-bottom: 10px; }
+    .tab-btn { background: #e0e0e0; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; color: #555; }
+    .tab-btn.active { background: var(--primary); color: white; }
 
-        .filter-bar { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
 
-        .filter-btn {
-            background: var(--panel-bg); color: var(--text-sub); border: 1px solid var(--border-color);
-            padding: 0.45rem 0.9rem; border-radius: 0.5rem; font-size: 0.825rem; font-weight: 600; cursor: pointer;
-            transition: all 0.2s ease;
-        }
+    .route-header { display: flex; justify-content: space-between; align-items: center; background: white; padding: 15px 20px; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 15px; flex-wrap: wrap; gap: 10px; }
+    .btn-action { background: var(--primary); color: white; border: none; padding: 12px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; }
+    .btn-action:hover { background: var(--primary-dark); }
 
-        .filter-btn.active, .filter-btn:hover { border-color: var(--accent-cyan); color: var(--accent-cyan); background: rgba(56, 189, 248, 0.08); }
+    .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 15px; }
+    .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 16px; position: relative; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+    .stop-badge { background: var(--primary); color: white; font-weight: bold; padding: 4px 10px; border-radius: 12px; font-size: 13px; display: inline-block; margin-bottom: 10px; }
+    
+    .card-title { font-size: 16px; font-weight: bold; margin-bottom: 8px; color: #111; }
+    .card-info { font-size: 14px; color: #555; margin-bottom: 6px; }
+    .card-actions { margin-top: 12px; padding-top: 10px; border-top: 1px solid #f0f0f0; }
 
-        .counter-badge {
-            background: rgba(56, 189, 248, 0.1); color: var(--accent-cyan);
-            border: 1px solid rgba(56, 189, 248, 0.3); padding: 0.4rem 0.8rem; border-radius: 9999px;
-            font-weight: 600; font-size: 0.85rem;
-        }
+    .nav-link { color: #1a73e8; font-weight: bold; text-decoration: none; font-size: 14px; display: inline-flex; align-items: center; gap: 4px; }
+    .nav-link:hover { text-decoration: underline; }
 
-        .btn {
-            background: var(--panel-bg); color: var(--text-main); border: 1px solid var(--border-color);
-            padding: 0.5rem 1rem; border-radius: 0.5rem; cursor: pointer; font-weight: 600; font-size: 0.85rem;
-        }
-
-        .leads-list { display: flex; flex-direction: column; gap: 0.85rem; }
-
-        .lead-card {
-            background: var(--panel-bg); border: 1px solid var(--border-color);
-            border-radius: 0.75rem; padding: 1.25rem; display: grid;
-            grid-template-columns: 2.2fr 1.8fr 1fr 1fr; gap: 1rem; align-items: center;
-        }
-
-        .col-main h3 { font-size: 1.05rem; color: #fff; margin-bottom: 0.35rem; display: flex; align-items: center; gap: 0.5rem; }
-        .col-main p { color: var(--text-sub); font-size: 0.825rem; }
-
-        .badge-pill { padding: 0.15rem 0.5rem; border-radius: 0.25rem; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; }
-        .bg-res { background: rgba(34, 197, 94, 0.15); color: var(--accent-green); border: 1px solid rgba(34, 197, 94, 0.3); }
-        .bg-comm { background: rgba(168, 85, 247, 0.15); color: var(--accent-purple); border: 1px solid rgba(168, 85, 247, 0.3); }
-        .bg-abatement { background: rgba(239, 68, 68, 0.15); color: var(--accent-red); border: 1px solid rgba(239, 68, 68, 0.3); }
-        .bg-dnc { background: rgba(239, 68, 68, 0.2); color: var(--accent-red); padding: 0.1rem 0.4rem; border-radius: 0.25rem; font-size: 0.7rem; }
-
-        .col-details { font-size: 0.825rem; display: flex; flex-direction: column; gap: 0.25rem; }
-        .col-details strong { color: #fff; }
-
-        .col-score { font-size: 1.2rem; font-weight: 800; color: var(--accent-cyan); text-align: center; }
-        .col-score span { display: block; font-size: 0.7rem; color: var(--text-sub); font-weight: 400; }
-
-        .col-actions { display: flex; flex-direction: column; gap: 0.5rem; align-items: flex-end; }
-
-        .btn-delete {
-            background: transparent; color: var(--accent-red); border: 1px solid rgba(239, 68, 68, 0.3);
-            padding: 0.3rem 0.6rem; border-radius: 0.375rem; font-size: 0.725rem; font-weight: 600; cursor: pointer;
-        }
-        .btn-delete:hover { background: var(--accent-red); color: #fff; }
-
-        .loading, .empty { text-align: center; padding: 3rem; color: var(--text-sub); }
-    </style>
+    .status-tag { display: inline-block; padding: 3px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; background: #e3f2fd; color: #1565c0; }
+  </style>
 </head>
 <body>
 
-    <div class="container">
-        <header>
-            <div class="header-title">
-                <h1>D&R Multi-Channel Property Dispatch Dashboard</h1>
-                <p>Categorized Homeowner Leads, Direct Mobile/Landline Classification & DNC Status</p>
-            </div>
-            <div style="display: flex; gap: 0.75rem; align-items: center;">
-                <span id="lead-count" class="counter-badge">0 Active Leads</span>
-                <button class="btn" onclick="loadLeads()">🔄 Refresh</button>
-            </div>
-        </header>
+  <div class="header">
+    <h1>🌱 Lawn Care & Lead Management Dashboard</h1>
+    <p>Organized territory routes and prospect tracking</p>
+  </div>
 
-        <div class="filter-bar">
-            <button class="filter-btn active" onclick="filterLeads('ALL', this)">All Leads</button>
-            <button class="filter-btn" onclick="filterLeads('Residential', this)">🏡 Residential</button>
-            <button class="filter-btn" onclick="filterLeads('Commercial', this)">🏢 Commercial</button>
-            <button class="filter-btn" onclick="filterLeads('Abatement', this)">🚨 Abatement Notices</button>
-            <button class="filter-btn" onclick="filterLeads('Mobile', this)">📱 Mobile Available</button>
-            <button class="filter-btn" onclick="filterLeads('Landline', this)">☎️ Landline Available</button>
-        </div>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('lawn-tab', event)">🚗 Lawn Route (Sorted)</button>
+    <button class="tab-btn" onclick="switchTab('all-leads-tab', event)">📋 All Leads</button>
+  </div>
 
-        <main id="leads-container" class="leads-list">
-            <div class="loading">Loading property dashboard...</div>
-        </main>
+  <!-- TAB 1: LAWN CARE ROUTE -->
+  <div id="lawn-tab" class="tab-content active">
+    <div class="route-header">
+      <div>
+        <h2>Street-by-Street Driving Route</h2>
+        <p style="color: #666; font-size: 14px;">Grouped alphabetically by street name and ordered by house number.</p>
+      </div>
+      <button class="btn-action" id="open-route-btn">🗺️ Launch Google Maps Multi-Stop Route</button>
     </div>
 
-    <script>
-        const SUPABASE_URL = "https://grccpxhtwgctgwtjtejz.supabase.co";
-        const SUPABASE_KEY = "sb_publishable_DSgli-s1kPh0zA4E-kT64A_6LiMrWg-";
-        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    <div id="lawn-cards-container" class="card-grid">
+      <p>Loading route data...</p>
+    </div>
+  </div>
 
-        let allLeads = [];
+  <!-- TAB 2: ALL LEADS -->
+  <div id="all-leads-tab" class="tab-content">
+    <div class="route-header">
+      <h2>All Active Leads</h2>
+      <button class="btn-action" onclick="loadAllLeads()">🔄 Refresh Leads</button>
+    </div>
 
-        async function loadLeads() {
-            const container = document.getElementById('leads-container');
-            container.innerHTML = '<div class="loading">Fetching property leads...</div>';
+    <div id="all-cards-container" class="card-grid">
+      <p>Loading leads...</p>
+    </div>
+  </div>
 
-            try {
-                const { data, error } = await supabaseClient
-                    .from('leads')
-                    .select('*')
-                    .order('lead_score', { ascending: false });
+  <script>
+    const SUPABASE_URL = "https://grccpxhtwgctgwtjtejz.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_DSgli-s1kPh0zA4E-kT64A_6LiMrWg-";
 
-                if (error) throw error;
-                allLeads = data || [];
-                renderLeads(allLeads);
-            } catch (err) {
-                container.innerHTML = `<div class="empty" style="color: var(--accent-red);">Error loading leads: ${err.message}</div>`;
-            }
+    function switchTab(tabId, evt) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+      
+      document.getElementById(tabId).classList.add('active');
+      evt.target.classList.add('active');
+
+      if (tabId === 'lawn-tab') loadLawnRoute();
+      if (tabId === 'all-leads-tab') loadAllLeads();
+    }
+
+    // Helper: Parse street name & house number for clean spatial sorting
+    function parseAddress(addrStr) {
+      if (!addrStr) return ['', 0];
+      const match = addrStr.trim().match(/^(\d+)\s+(.+)/);
+      return match ? [match[2].toLowerCase(), parseInt(match[1], 10)] : [addrStr.toLowerCase(), 0];
+    }
+
+    async function fetchLeads(queryParam = "") {
+      const response = await fetch(`${SUPABASE_URL}/rest/v1/leads${queryParam}`, {
+        headers: {
+          "apikey": SUPABASE_KEY,
+          "Authorization": `Bearer ${SUPABASE_KEY}`
+        }
+      });
+      return await response.json();
+    }
+
+    async function loadLawnRoute() {
+      const container = document.getElementById("lawn-cards-container");
+      container.innerHTML = "<p>Loading lawn prospects...</p>";
+
+      try {
+        const leads = await fetchLeads("?service=like.*Lawn%20Care*");
+        
+        // Sort street-by-street (Street Name first, then House Number)
+        leads.sort((a, b) => {
+          const [streetA, numA] = parseAddress(a.request);
+          const [streetB, numB] = parseAddress(b.request);
+          return streetA.localeCompare(streetB) || (numA - numB);
+        });
+
+        container.innerHTML = "";
+        const routeAddresses = [];
+
+        if (!leads || leads.length === 0) {
+          container.innerHTML = "<p>No lawn care leads found in database.</p>";
+          return;
         }
 
-        function renderLeads(leads) {
-            const container = document.getElementById('leads-container');
-            document.getElementById('lead-count').innerText = `${leads.length} Active Leads`;
+        leads.forEach((lead, index) => {
+          const addr = lead.request || "Address N/A";
+          if (addr !== "Address N/A") routeAddresses.push(addr);
 
-            if (leads.length === 0) {
-                container.innerHTML = '<div class="empty">No leads found.</div>';
-                return;
-            }
+          const card = document.createElement("div");
+          card.className = "card";
+          card.innerHTML = `
+            <span class="stop-badge">Stop #${index + 1}</span>
+            <div class="card-title">📍 ${addr}</div>
+            <div class="card-info">👤 <strong>Owner:</strong> ${lead.customer || 'Homeowner'}</div>
+            <div class="card-info">📱 <strong>Phone:</strong> ${lead.mobile_phones || 'No phone on file'}</div>
+            <div class="card-info">🏷️ <strong>Service:</strong> ${lead.service || 'Lawn Maintenance'}</div>
+            <div class="card-actions">
+              <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addr)}" target="_blank" class="nav-link">
+                🧭 Open Single Stop Navigation
+              </a>
+            </div>
+          `;
+          container.appendChild(card);
+        });
 
-            container.innerHTML = '';
-            leads.forEach(lead => {
-                const propType = lead.property_type || 'Residential';
-                let badgeClass = propType === 'Commercial' ? 'bg-comm' : 'bg-res';
-                if (lead.service && lead.service.includes('Abatement')) badgeClass = 'bg-abatement';
+        // Configure multi-stop route button (Google Maps limits single URLs to ~10 stops)
+        document.getElementById("open-route-btn").onclick = () => {
+          if (routeAddresses.length > 0) {
+            const stops = routeAddresses.slice(0, 10).map(a => encodeURIComponent(a)).join("/");
+            window.open(`https://www.google.com/maps/dir/${stops}`, "_blank");
+          } else {
+            alert("No valid addresses available for route creation.");
+          }
+        };
 
-                const card = document.createElement('div');
-                card.className = 'lead-card';
-                card.id = `lead-${lead.id}`;
+      } catch (err) {
+        container.innerHTML = `<p style="color:red;">Error loading route: ${err.message}</p>`;
+      }
+    }
 
-                card.innerHTML = `
-                    <div class="col-main">
-                        <h3>📍 ${escapeHtml(lead.location || 'San Bernardino')} <span class="badge-pill ${badgeClass}">${escapeHtml(propType)}</span></h3>
-                        <p>👤 Owner: <strong>${escapeHtml(lead.customer || 'Property Owner')}</strong></p>
-                        <p style="margin-top:0.25rem;">${escapeHtml(lead.request || '')}</p>
-                    </div>
-                    <div class="col-details">
-                        <span>📱 Mobile: <strong>${escapeHtml(lead.mobile_phones || 'N/A')}</strong></span>
-                        <span>☎️ Landline: <strong>${escapeHtml(lead.landline_phones || 'N/A')}</strong></span>
-                        <span>✉️ Email: ${escapeHtml(lead.email || 'N/A')}</span>
-                        <span>🛡️ DNC: ${lead.dnc_status ? '<span class="bg-dnc">FLAGGED</span>' : '<span style="color:var(--accent-green)">CLEAR</span>'}</span>
-                    </div>
-                    <div class="col-score">
-                        ${lead.lead_score || 50}
-                        <span>MATCH SCORE</span>
-                    </div>
-                    <div class="col-actions">
-                        <button class="btn-delete" onclick="deleteSingleLead('${lead.id}')">🗑️ Delete</button>
-                    </div>
-                `;
-                container.appendChild(card);
-            });
+    async function loadAllLeads() {
+      const container = document.getElementById("all-cards-container");
+      container.innerHTML = "<p>Loading all database leads...</p>";
+
+      try {
+        const leads = await fetchLeads("?select=*&order=created_at.desc");
+        container.innerHTML = "";
+
+        if (!leads || leads.length === 0) {
+          container.innerHTML = "<p>No leads found in database.</p>";
+          return;
         }
 
-        function filterLeads(keyword, btnElem) {
-            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-            btnElem.classList.add('active');
+        leads.forEach((lead) => {
+          const card = document.createElement("div");
+          card.className = "card";
+          card.innerHTML = `
+            <div class="card-title">${lead.customer || 'Unnamed Lead'}</div>
+            <div class="card-info">📍 <strong>Address:</strong> ${lead.request || 'N/A'}</div>
+            <div class="card-info">📱 <strong>Phone:</strong> ${lead.mobile_phones || 'N/A'}</div>
+            <div class="card-info">🏷️ <strong>Service:</strong> ${lead.service || 'General Inquiry'}</div>
+            <div class="card-info"><span class="status-tag">${lead.status || 'New Lead'}</span></div>
+          `;
+          container.appendChild(card);
+        });
+      } catch (err) {
+        container.innerHTML = `<p style="color:red;">Error loading leads: ${err.message}</p>`;
+      }
+    }
 
-            if (keyword === 'ALL') return renderLeads(allLeads);
-
-            const filtered = allLeads.filter(l => {
-                if (keyword === 'Residential') return (l.property_type || '').toLowerCase() === 'residential';
-                if (keyword === 'Commercial') return (l.property_type || '').toLowerCase() === 'commercial';
-                if (keyword === 'Abatement') return (l.service || '').toLowerCase().includes('abatement');
-                if (keyword === 'Mobile') return l.mobile_phones && l.mobile_phones.trim().length > 0;
-                if (keyword === 'Landline') return l.landline_phones && l.landline_phones.trim().length > 0;
-                return true;
-            });
-
-            renderLeads(filtered);
-        }
-
-        async function deleteSingleLead(id) {
-            if (!confirm("Delete record?")) return;
-            const { error } = await supabaseClient.from('leads').delete().eq('id', id);
-            if (!error) {
-                document.getElementById(`lead-${id}`)?.remove();
-                allLeads = allLeads.filter(l => l.id != id);
-                document.getElementById('lead-count').innerText = `${allLeads.length} Active Leads`;
-            }
-        }
-
-        function escapeHtml(str) {
-            return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-        }
-
-        window.addEventListener('DOMContentLoaded', loadLeads);
-    </script>
+    // Initial Load
+    loadLawnRoute();
+  </script>
 </body>
 </html>
