@@ -3,126 +3,155 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Lawn Care Lead & Route Dashboard</title>
+  <title>Lawn Care Driving Route</title>
   <style>
-    :root {
-      --primary: #2e7d32;
-      --primary-dark: #1b5e20;
-      --bg: #f4f6f8;
-      --card-bg: #ffffff;
-      --text: #333333;
-      --border: #e0e0e0;
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f8f9fa;
+      color: #212529;
+      margin: 0;
+      padding: 15px;
     }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-    body { background-color: var(--bg); color: var(--text); padding: 20px; }
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      background: #ffffff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
 
-    .header { background: var(--primary-dark); color: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
-    .header h1 { font-size: 24px; margin-bottom: 5px; }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      border-bottom: 2px solid #2e7d32;
+      padding-bottom: 12px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
 
-    .tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid var(--border); padding-bottom: 10px; }
-    .tab-btn { background: #e0e0e0; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; color: #555; }
-    .tab-btn.active { background: var(--primary); color: white; }
+    h1 {
+      font-size: 20px;
+      color: #2e7d32;
+      margin: 0;
+    }
 
-    .tab-content { display: none; }
-    .tab-content.active { display: block; }
+    .btn-route {
+      background-color: #2e7d32;
+      color: white;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 5px;
+      font-weight: bold;
+      cursor: pointer;
+      text-decoration: none;
+      font-size: 14px;
+    }
 
-    .route-header { display: flex; justify-content: space-between; align-items: center; background: white; padding: 15px 20px; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 15px; flex-wrap: wrap; gap: 10px; }
-    .btn-action { background: var(--primary); color: white; border: none; padding: 12px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; }
-    .btn-action:hover { background: var(--primary-dark); }
+    .btn-route:hover {
+      background-color: #1b5e20;
+    }
 
-    .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 15px; }
-    .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 16px; position: relative; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-    .stop-badge { background: var(--primary); color: white; font-weight: bold; padding: 4px 10px; border-radius: 12px; font-size: 13px; display: inline-block; margin-bottom: 10px; }
-    
-    .card-title { font-size: 16px; font-weight: bold; margin-bottom: 8px; color: #111; }
-    .card-info { font-size: 14px; color: #555; margin-bottom: 6px; }
-    .card-actions { margin-top: 12px; padding-top: 10px; border-top: 1px solid #f0f0f0; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
 
-    .nav-link { color: #1a73e8; font-weight: bold; text-decoration: none; font-size: 14px; display: inline-flex; align-items: center; gap: 4px; }
-    .nav-link:hover { text-decoration: underline; }
+    th, td {
+      text-align: left;
+      padding: 12px 10px;
+      border-bottom: 1px solid #dee2e6;
+      font-size: 14px;
+    }
 
-    .status-tag { display: inline-block; padding: 3px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; background: #e3f2fd; color: #1565c0; }
+    th {
+      background-color: #f1f3f5;
+      color: #495057;
+      font-weight: bold;
+    }
+
+    tr:hover {
+      background-color: #f8f9fa;
+    }
+
+    .stop-num {
+      font-weight: bold;
+      color: #2e7d32;
+      width: 50px;
+    }
+
+    .nav-btn {
+      color: #1a73e8;
+      text-decoration: none;
+      font-weight: bold;
+    }
+
+    .nav-btn:hover {
+      text-decoration: underline;
+    }
   </style>
 </head>
 <body>
 
-  <div class="header">
-    <h1>🌱 Lawn Care & Lead Management Dashboard</h1>
-    <p>Organized territory routes and prospect tracking</p>
-  </div>
-
-  <div class="tabs">
-    <button class="tab-btn active" onclick="switchTab('lawn-tab', event)">🚗 Lawn Route (Sorted)</button>
-    <button class="tab-btn" onclick="switchTab('all-leads-tab', event)">📋 All Leads</button>
-  </div>
-
-  <!-- TAB 1: LAWN CARE ROUTE -->
-  <div id="lawn-tab" class="tab-content active">
-    <div class="route-header">
+  <div class="container">
+    <div class="header">
       <div>
-        <h2>Street-by-Street Driving Route</h2>
-        <p style="color: #666; font-size: 14px;">Grouped alphabetically by street name and ordered by house number.</p>
+        <h1>🌱 Lawn Prospect Driving Sheet</h1>
+        <p style="font-size: 13px; color: #6c757d; margin-top: 4px;">Organized alphabetically by street name & house number</p>
       </div>
-      <button class="btn-action" id="open-route-btn">🗺️ Launch Google Maps Multi-Stop Route</button>
+      <button class="btn-route" id="launch-maps-btn">🗺️ Open Full Route in Google Maps</button>
     </div>
 
-    <div id="lawn-cards-container" class="card-grid">
-      <p>Loading route data...</p>
-    </div>
-  </div>
-
-  <!-- TAB 2: ALL LEADS -->
-  <div id="all-leads-tab" class="tab-content">
-    <div class="route-header">
-      <h2>All Active Leads</h2>
-      <button class="btn-action" onclick="loadAllLeads()">🔄 Refresh Leads</button>
-    </div>
-
-    <div id="all-cards-container" class="card-grid">
-      <p>Loading leads...</p>
-    </div>
+    <table>
+      <thead>
+        <tr>
+          <th class="stop-num">Stop</th>
+          <th>Property Address</th>
+          <th>Homeowner</th>
+          <th>Phone</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody id="route-table-body">
+        <tr>
+          <td colspan="5">Loading address route...</td>
+        </tr>
+      </tbody>
+    </table>
   </div>
 
   <script>
     const SUPABASE_URL = "https://grccpxhtwgctgwtjtejz.supabase.co";
     const SUPABASE_KEY = "sb_publishable_DSgli-s1kPh0zA4E-kT64A_6LiMrWg-";
 
-    function switchTab(tabId, evt) {
-      document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-      document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-      
-      document.getElementById(tabId).classList.add('active');
-      evt.target.classList.add('active');
-
-      if (tabId === 'lawn-tab') loadLawnRoute();
-      if (tabId === 'all-leads-tab') loadAllLeads();
-    }
-
-    // Helper: Parse street name & house number for clean spatial sorting
     function parseAddress(addrStr) {
       if (!addrStr) return ['', 0];
       const match = addrStr.trim().match(/^(\d+)\s+(.+)/);
       return match ? [match[2].toLowerCase(), parseInt(match[1], 10)] : [addrStr.toLowerCase(), 0];
     }
 
-    async function fetchLeads(queryParam = "") {
-      const response = await fetch(`${SUPABASE_URL}/rest/v1/leads${queryParam}`, {
-        headers: {
-          "apikey": SUPABASE_KEY,
-          "Authorization": `Bearer ${SUPABASE_KEY}`
-        }
-      });
-      return await response.json();
-    }
-
-    async function loadLawnRoute() {
-      const container = document.getElementById("lawn-cards-container");
-      container.innerHTML = "<p>Loading lawn prospects...</p>";
-
+    async function loadDrivingSheet() {
+      const tbody = document.getElementById("route-table-body");
+      
       try {
-        const leads = await fetchLeads("?service=like.*Lawn%20Care*");
+        const response = await fetch(`${SUPABASE_URL}/rest/v1/leads?service=like.*Lawn%20Care*`, {
+          headers: {
+            "apikey": SUPABASE_KEY,
+            "Authorization": `Bearer ${SUPABASE_KEY}`
+          }
+        });
         
+        const leads = await response.json();
+
+        if (!leads || leads.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="5">No prospects found in database.</td></tr>';
+          return;
+        }
+
         // Sort street-by-street (Street Name first, then House Number)
         leads.sort((a, b) => {
           const [streetA, numA] = parseAddress(a.request);
@@ -130,82 +159,41 @@
           return streetA.localeCompare(streetB) || (numA - numB);
         });
 
-        container.innerHTML = "";
+        tbody.innerHTML = "";
         const routeAddresses = [];
 
-        if (!leads || leads.length === 0) {
-          container.innerHTML = "<p>No lawn care leads found in database.</p>";
-          return;
-        }
+        leads.forEach((lead, idx) => {
+          const addr = lead.request || "N/A";
+          if (addr !== "N/A") routeAddresses.push(addr);
 
-        leads.forEach((lead, index) => {
-          const addr = lead.request || "Address N/A";
-          if (addr !== "Address N/A") routeAddresses.push(addr);
-
-          const card = document.createElement("div");
-          card.className = "card";
-          card.innerHTML = `
-            <span class="stop-badge">Stop #${index + 1}</span>
-            <div class="card-title">📍 ${addr}</div>
-            <div class="card-info">👤 <strong>Owner:</strong> ${lead.customer || 'Homeowner'}</div>
-            <div class="card-info">📱 <strong>Phone:</strong> ${lead.mobile_phones || 'No phone on file'}</div>
-            <div class="card-info">🏷️ <strong>Service:</strong> ${lead.service || 'Lawn Maintenance'}</div>
-            <div class="card-actions">
-              <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addr)}" target="_blank" class="nav-link">
-                🧭 Open Single Stop Navigation
+          const row = document.createElement("tr");
+          row.innerHTML = `
+            <td class="stop-num">#${idx + 1}</td>
+            <td><strong>${addr}</strong></td>
+            <td>${lead.customer || 'Current Owner'}</td>
+            <td>${lead.mobile_phones || '—'}</td>
+            <td>
+              <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addr)}" target="_blank" class="nav-btn">
+                📍 Navigate
               </a>
-            </div>
+            </td>
           `;
-          container.appendChild(card);
+          tbody.appendChild(row);
         });
 
-        // Configure multi-stop route button (Google Maps limits single URLs to ~10 stops)
-        document.getElementById("open-route-btn").onclick = () => {
+        document.getElementById("launch-maps-btn").onclick = () => {
           if (routeAddresses.length > 0) {
             const stops = routeAddresses.slice(0, 10).map(a => encodeURIComponent(a)).join("/");
             window.open(`https://www.google.com/maps/dir/${stops}`, "_blank");
-          } else {
-            alert("No valid addresses available for route creation.");
           }
         };
 
       } catch (err) {
-        container.innerHTML = `<p style="color:red;">Error loading route: ${err.message}</p>`;
+        tbody.innerHTML = `<tr><td colspan="5" style="color:red;">Error loading route: ${err.message}</td></tr>`;
       }
     }
 
-    async function loadAllLeads() {
-      const container = document.getElementById("all-cards-container");
-      container.innerHTML = "<p>Loading all database leads...</p>";
-
-      try {
-        const leads = await fetchLeads("?select=*&order=created_at.desc");
-        container.innerHTML = "";
-
-        if (!leads || leads.length === 0) {
-          container.innerHTML = "<p>No leads found in database.</p>";
-          return;
-        }
-
-        leads.forEach((lead) => {
-          const card = document.createElement("div");
-          card.className = "card";
-          card.innerHTML = `
-            <div class="card-title">${lead.customer || 'Unnamed Lead'}</div>
-            <div class="card-info">📍 <strong>Address:</strong> ${lead.request || 'N/A'}</div>
-            <div class="card-info">📱 <strong>Phone:</strong> ${lead.mobile_phones || 'N/A'}</div>
-            <div class="card-info">🏷️ <strong>Service:</strong> ${lead.service || 'General Inquiry'}</div>
-            <div class="card-info"><span class="status-tag">${lead.status || 'New Lead'}</span></div>
-          `;
-          container.appendChild(card);
-        });
-      } catch (err) {
-        container.innerHTML = `<p style="color:red;">Error loading leads: ${err.message}</p>`;
-      }
-    }
-
-    // Initial Load
-    loadLawnRoute();
+    loadDrivingSheet();
   </script>
 </body>
 </html>
