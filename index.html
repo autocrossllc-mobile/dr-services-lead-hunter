@@ -3,209 +3,102 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>D&R Property Leads Dashboard</title>
-    <!-- Supabase JS Client -->
+    <title>D&R Property Leads & Owner Lookup Dashboard</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
-            --bg-color: #0f172a;
-            --card-bg: #1e293b;
-            --card-border: #334155;
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
-            --accent-blue: #38bdf8;
+            --bg-dark: #090d16;
+            --panel-bg: #131c2e;
+            --border-color: #1e2d4a;
+            --text-main: #f1f5f9;
+            --text-sub: #94a3b8;
+            --accent-cyan: #38bdf8;
             --accent-green: #22c55e;
             --accent-red: #ef4444;
-            --accent-hover: #dc2626;
+            --accent-orange: #f97316;
+            --accent-purple: #a855f7;
         }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-        }
-
-        body {
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            padding: 2rem 1rem;
-            min-height: 100vh;
-        }
-
-        .container {
-            max-width: 1100px;
-            margin: 0 auto;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
+        body { background: var(--bg-dark); color: var(--text-main); padding: 1.5rem; min-height: 100vh; }
+        .container { max-width: 1300px; margin: 0 auto; }
 
         header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 2rem;
-            padding-bottom: 1rem;
-            border-bottom: 1px solid var(--card-border);
+            display: flex; justify-content: space-between; align-items: center;
+            padding-bottom: 1.5rem; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-color);
+            flex-wrap: wrap; gap: 1rem;
         }
 
-        .title-group h1 {
-            font-size: 1.75rem;
-            font-weight: 700;
-            letter-spacing: -0.025em;
+        .header-title h1 { font-size: 1.75rem; font-weight: 700; color: #fff; }
+        .header-title p { color: var(--text-sub); font-size: 0.875rem; margin-top: 0.25rem; }
+
+        .filter-bar {
+            display: flex; gap: 0.5rem; margin-bottom: 1.5rem; flex-wrap: wrap;
         }
 
-        .title-group p {
-            color: var(--text-muted);
-            font-size: 0.875rem;
-            margin-top: 0.25rem;
+        .filter-btn {
+            background: var(--panel-bg); color: var(--text-sub); border: 1px solid var(--border-color);
+            padding: 0.4rem 0.85rem; border-radius: 0.5rem; font-size: 0.8rem; font-weight: 600; cursor: pointer;
         }
 
-        .actions {
-            display: flex;
-            gap: 1rem;
-            align-items: center;
+        .filter-btn.active, .filter-btn:hover { border-color: var(--accent-cyan); color: var(--accent-cyan); }
+
+        .counter-badge {
+            background: rgba(56, 189, 248, 0.1); color: var(--accent-cyan);
+            border: 1px solid rgba(56, 189, 248, 0.3); padding: 0.4rem 0.8rem; border-radius: 9999px;
+            font-weight: 600; font-size: 0.85rem;
         }
 
-        .badge {
-            background: rgba(56, 189, 248, 0.1);
-            color: var(--accent-blue);
-            border: 1px solid rgba(56, 189, 248, 0.2);
-            padding: 0.35rem 0.75rem;
-            border-radius: 9999px;
-            font-size: 0.85rem;
-            font-weight: 600;
+        .btn {
+            background: var(--panel-bg); color: var(--text-main); border: 1px solid var(--border-color);
+            padding: 0.5rem 1rem; border-radius: 0.5rem; cursor: pointer; font-weight: 600; font-size: 0.85rem;
         }
 
-        .btn-refresh {
-            background: var(--card-bg);
-            color: var(--text-main);
-            border: 1px solid var(--card-border);
-            padding: 0.5rem 1rem;
-            border-radius: 0.5rem;
-            cursor: pointer;
-            font-weight: 500;
-            transition: all 0.2s ease;
-        }
+        .btn-purge { border-color: rgba(249, 115, 22, 0.4); color: var(--accent-orange); }
+        .btn-purge:hover { background: var(--accent-orange); color: #fff; }
 
-        .btn-refresh:hover {
-            background: #2d3748;
-        }
-
-        .leads-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-            gap: 1.25rem;
-        }
+        .leads-list { display: flex; flex-direction: column; gap: 0.85rem; }
 
         .lead-card {
-            background: var(--card-bg);
-            border: 1px solid var(--card-border);
-            border-radius: 0.75rem;
-            padding: 1.25rem;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-            transition: transform 0.2s ease, border-color 0.2s ease;
+            background: var(--panel-bg); border: 1px solid var(--border-color);
+            border-radius: 0.75rem; padding: 1.25rem; display: grid;
+            grid-template-columns: 2.2fr 1.8fr 1fr 1fr; gap: 1rem; align-items: center;
         }
 
-        .lead-card:hover {
-            transform: translateY(-2px);
-            border-color: #475569;
-        }
+        .col-main h3 { font-size: 1.05rem; color: #fff; margin-bottom: 0.35rem; display: flex; align-items: center; gap: 0.5rem; }
+        .col-main p { color: var(--text-sub); font-size: 0.825rem; }
 
-        .card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 0.75rem;
+        .badge-pill {
+            padding: 0.15rem 0.5rem; border-radius: 0.25rem; font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
         }
+        .bg-absentee { background: rgba(56, 189, 248, 0.15); color: var(--accent-cyan); border: 1px solid rgba(56, 189, 248, 0.3); }
+        .bg-tax { background: rgba(249, 115, 22, 0.15); color: var(--accent-orange); border: 1px solid rgba(249, 115, 22, 0.3); }
+        .bg-code { background: rgba(239, 68, 68, 0.15); color: var(--accent-red); border: 1px solid rgba(239, 68, 68, 0.3); }
 
-        .service-type {
-            font-size: 0.85rem;
-            font-weight: 600;
-            color: var(--accent-blue);
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
+        .col-details { font-size: 0.825rem; display: flex; flex-direction: column; gap: 0.25rem; }
+        .col-details strong { color: #fff; }
 
-        .est-job {
-            font-size: 0.85rem;
-            font-weight: 700;
-            color: var(--accent-green);
-            background: rgba(34, 197, 94, 0.1);
-            padding: 0.2rem 0.5rem;
-            border-radius: 0.25rem;
-        }
+        .col-est { font-size: 1.05rem; font-weight: 700; color: var(--accent-green); }
 
-        .request-details {
-            font-size: 0.95rem;
-            line-height: 1.5;
-            color: var(--text-main);
-            margin-bottom: 1rem;
-            word-break: break-word;
-        }
+        .col-actions { display: flex; flex-direction: column; gap: 0.5rem; align-items: flex-end; }
 
-        .meta-info {
-            font-size: 0.8rem;
-            color: var(--text-muted);
-            margin-bottom: 1rem;
-            display: flex;
-            flex-direction: column;
-            gap: 0.25rem;
+        .btn-contact {
+            background: #0284c7; color: #fff; text-decoration: none; padding: 0.45rem 0.8rem;
+            border-radius: 0.375rem; font-size: 0.775rem; font-weight: 600; text-align: center;
         }
-
-        .card-footer {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding-top: 0.75rem;
-            border-top: 1px solid var(--card-border);
-        }
-
-        .status-pill {
-            font-size: 0.75rem;
-            font-weight: 600;
-            padding: 0.25rem 0.5rem;
-            border-radius: 0.375rem;
-            background: #334155;
-            color: #cbd5e1;
-        }
+        .btn-contact:hover { background: #0369a1; }
 
         .btn-delete {
-            background: transparent;
-            color: var(--accent-red);
-            border: 1px solid rgba(239, 68, 68, 0.3);
-            padding: 0.4rem 0.75rem;
-            border-radius: 0.375rem;
-            font-size: 0.8rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            display: flex;
-            align-items: center;
-            gap: 0.35rem;
+            background: transparent; color: var(--accent-red); border: 1px solid rgba(239, 68, 68, 0.3);
+            padding: 0.3rem 0.6rem; border-radius: 0.375rem; font-size: 0.725rem; font-weight: 600; cursor: pointer;
         }
+        .btn-delete:hover { background: var(--accent-red); color: #fff; }
 
-        .btn-delete:hover {
-            background: var(--accent-red);
-            color: #ffffff;
-        }
+        .loading, .empty { text-align: center; padding: 3rem; color: var(--text-sub); }
 
-        .empty-state {
-            grid-column: 1 / -1;
-            text-align: center;
-            padding: 4rem 1rem;
-            color: var(--text-muted);
-            background: var(--card-bg);
-            border: 1px dashed var(--card-border);
-            border-radius: 0.75rem;
-        }
-
-        .loading {
-            grid-column: 1 / -1;
-            text-align: center;
-            padding: 3rem;
-            color: var(--text-muted);
+        @media (max-width: 900px) {
+            .lead-card { grid-template-columns: 1fr; gap: 0.75rem; }
+            .col-actions { flex-direction: row; justify-content: space-between; width: 100%; }
         }
     </style>
 </head>
@@ -213,142 +106,147 @@
 
     <div class="container">
         <header>
-            <div class="title-group">
-                <h1>D&R Lead Operations Dashboard</h1>
-                <p>Live San Bernardino Parcel & Abatement Records</p>
+            <div class="header-title">
+                <h1>D&R Property Leads & Absentee Owner Dashboard</h1>
+                <p>Ordered Newest First • Multi-Source County GIS, Code Violations & Tax Delinquency</p>
             </div>
-            <div class="actions">
-                <span id="lead-count" class="badge">0 Leads Loaded</span>
-                <button class="btn-refresh" onclick="loadLeads()">🔄 Refresh</button>
+            <div style="display: flex; gap: 0.75rem; align-items: center;">
+                <span id="lead-count" class="counter-badge">0 Active Leads</span>
+                <button class="btn" onclick="loadLeads()">🔄 Refresh</button>
+                <button class="btn btn-purge" onclick="purgeLeads()">🧹 Clear Old Leads</button>
             </div>
         </header>
 
-        <main id="leads-container" class="leads-grid">
-            <div class="loading">Fetching verified leads from database...</div>
+        <div class="filter-bar">
+            <button class="filter-btn active" onclick="filterLeads('ALL', this)">All Leads</button>
+            <button class="filter-btn" onclick="filterLeads('Absentee', this)">🏠 Absentee Owners</button>
+            <button class="filter-btn" onclick="filterLeads('Tax', this)">⚠️ Tax Delinquent</button>
+            <button class="filter-btn" onclick="filterLeads('Code', this)">🚨 Fire / Code Violations</button>
+        </div>
+
+        <main id="leads-container" class="leads-list">
+            <div class="loading">Fetching latest property owner leads...</div>
         </main>
     </div>
 
     <script>
-        // Supabase Client Initialization
         const SUPABASE_URL = "https://grccpxhtwgctgwtjtejz.supabase.co";
         const SUPABASE_KEY = "sb_publishable_DSgli-s1kPh0zA4E-kT64A_6LiMrWg-";
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        // Fetch & Render Leads
+        let allLeads = [];
+
         async function loadLeads() {
             const container = document.getElementById('leads-container');
-            container.innerHTML = '<div class="loading">Fetching verified leads from database...</div>';
+            container.innerHTML = '<div class="loading">Fetching latest property owner leads...</div>';
 
             try {
-                const { data: leads, error } = await supabaseClient
+                const { data, error } = await supabaseClient
                     .from('leads')
                     .select('*')
                     .order('id', { ascending: false });
 
                 if (error) throw error;
-
-                document.getElementById('lead-count').innerText = `${leads.length} Leads Total`;
-
-                if (!leads || leads.length === 0) {
-                    container.innerHTML = `
-                        <div class="empty-state">
-                            <h2>No Active Leads Found</h2>
-                            <p>Run your hunter.py pipeline to pull new parcel records.</p>
-                        </div>
-                    `;
-                    return;
-                }
-
-                container.innerHTML = '';
-                leads.forEach(lead => {
-                    const card = document.createElement('div');
-                    card.className = 'lead-card';
-                    card.id = `lead-${lead.id}`;
-
-                    card.innerHTML = `
-                        <div>
-                            <div class="card-header">
-                                <span class="service-type">${escapeHtml(lead.service || 'Property Lead')}</span>
-                                <span class="est-job">${escapeHtml(lead.estimated_job || '$1,500 Est.')}</span>
-                            </div>
-                            <div class="request-details">
-                                ${escapeHtml(lead.request || 'No details provided.')}
-                            </div>
-                            <div class="meta-info">
-                                <span>📍 <strong>Location:</strong> ${escapeHtml(lead.location || 'Inland Empire')}</span>
-                                <span>👤 <strong>Record:</strong> ${escapeHtml(lead.customer || 'County Record')}</span>
-                            </div>
-                        </div>
-                        <div class="card-footer">
-                            <span class="status-pill">${escapeHtml(lead.status || 'Active')}</span>
-                            <button class="btn-delete" onclick="deleteLead('${lead.id}')">
-                                🗑️ Delete
-                            </button>
-                        </div>
-                    `;
-                    container.appendChild(card);
-                });
-
+                allLeads = data || [];
+                renderLeads(allLeads);
             } catch (err) {
-                console.error("Fetch Error:", err);
-                container.innerHTML = `<div class="empty-state" style="color: var(--accent-red);">Error loading leads: ${err.message}</div>`;
+                container.innerHTML = `<div class="empty" style="color: var(--accent-red);">Error loading leads: ${err.message}</div>`;
             }
         }
 
-        // Delete Lead Function
-        async function deleteLead(leadId) {
-            if (!confirm("Are you sure you want to permanently delete this lead?")) {
+        function renderLeads(leads) {
+            const container = document.getElementById('leads-container');
+            document.getElementById('lead-count').innerText = `${leads.length} Active Leads`;
+
+            if (leads.length === 0) {
+                container.innerHTML = '<div class="empty">No leads found. Run hunter.py to pull fresh county records.</div>';
                 return;
             }
 
-            try {
-                const { error } = await supabaseClient
-                    .from('leads')
-                    .delete()
-                    .eq('id', leadId);
+            container.innerHTML = '';
+            leads.forEach(lead => {
+                const parsed = parseLeadRequest(lead.request || '');
+                let badgeClass = 'bg-absentee';
+                if (lead.service.includes('Tax')) badgeClass = 'bg-tax';
+                if (lead.service.includes('Code') || lead.service.includes('Fire')) badgeClass = 'bg-code';
 
-                if (error) {
-                    alert("Failed to delete lead: " + error.message);
-                    return;
-                }
+                const card = document.createElement('div');
+                card.className = 'lead-card';
+                card.id = `lead-${lead.id}`;
 
-                // Remove element from UI instantly
-                const cardElement = document.getElementById(`lead-${leadId}`);
-                if (cardElement) {
-                    cardElement.remove();
-                }
+                card.innerHTML = `
+                    <div class="col-main">
+                        <h3>📍 ${escapeHtml(parsed.address)} <span class="badge-pill ${badgeClass}">${escapeHtml(lead.service)}</span></h3>
+                        <p>🏙️ Location: ${escapeHtml(lead.location || 'San Bernardino, CA')} | Owner Mail: ${escapeHtml(parsed.mailAddr)}</p>
+                    </div>
+                    <div class="col-details">
+                        <span>🆔 APN: <strong>${escapeHtml(parsed.apn)}</strong></span>
+                        <span>📏 Parcel Size: ${escapeHtml(parsed.acres)} Acres</span>
+                    </div>
+                    <div class="col-est">
+                        ${escapeHtml(lead.estimated_job || '$1,800 - $6,500')}
+                    </div>
+                    <div class="col-actions">
+                        ${parsed.contact.startsWith('http') 
+                            ? `<a href="${parsed.contact}" target="_blank" class="btn-contact">📞 Lookup Owner Contact</a>`
+                            : `<span style="font-size:0.75rem; color:var(--accent-cyan);">${escapeHtml(parsed.contact)}</span>`
+                        }
+                        <button class="btn-delete" onclick="deleteSingleLead('${lead.id}')">🗑️ Delete</button>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
 
-                // Update counter
-                const currentCountElem = document.getElementById('lead-count');
-                const currentCount = parseInt(currentCountElem.innerText) || 1;
-                const newCount = Math.max(0, currentCount - 1);
-                currentCountElem.innerText = `${newCount} Leads Total`;
+        function parseLeadRequest(str) {
+            let apn = 'N/A', address = 'Property Parcel', mailAddr = 'N/A', acres = 'N/A', contact = '#';
+            str.split('|').forEach(part => {
+                const clean = part.trim();
+                if (clean.startsWith('APN:')) apn = clean.replace('APN:', '').trim();
+                if (clean.startsWith('Address:')) address = clean.replace('Address:', '').trim();
+                if (clean.startsWith('Mail Addr:')) mailAddr = clean.replace('Mail Addr:', '').trim();
+                if (clean.startsWith('Acres:')) acres = clean.replace('Acres:', '').trim();
+                if (clean.startsWith('Owner Contact:')) contact = clean.replace('Owner Contact:', '').trim();
+            });
+            if (contact === '#' && address !== 'Property Parcel') {
+                contact = `https://www.truepeoplesearch.com/results?streetaddress=${encodeURIComponent(address + ', CA')}`;
+            }
+            return { apn, address, mailAddr, acres, contact };
+        }
 
-                if (newCount === 0) {
-                    document.getElementById('leads-container').innerHTML = `
-                        <div class="empty-state">
-                            <h2>No Active Leads Found</h2>
-                            <p>Run your hunter.py pipeline to pull new parcel records.</p>
-                        </div>
-                    `;
-                }
+        function filterLeads(category, btnElem) {
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            btnElem.classList.add('active');
 
-            } catch (err) {
-                alert("Delete Error: " + err.message);
+            if (category === 'ALL') return renderLeads(allLeads);
+            const filtered = allLeads.filter(l => l.service.toLowerCase().includes(category.toLowerCase()));
+            renderLeads(filtered);
+        }
+
+        async function deleteSingleLead(id) {
+            if (!confirm("Permanently delete this record?")) return;
+            const { error } = await supabaseClient.from('leads').delete().eq('id', id);
+            if (!error) {
+                document.getElementById(`lead-${id}`)?.remove();
+                allLeads = allLeads.filter(l => l.id != id);
+                document.getElementById('lead-count').innerText = `${allLeads.length} Active Leads`;
             }
         }
 
-        // Helper to prevent XSS
-        function escapeHtml(str) {
-            return String(str)
-                .replace(/&/g, "&amp;")
-                .replace(/</g, "&lt;")
-                .replace(/>/g, "&gt;")
-                .replace(/"/g, "&quot;")
-                .replace(/'/g, "&#039;");
+        async function purgeLeads() {
+            if (!confirm("Clear oldest 25 records to keep pipeline clean?")) return;
+            const { data } = await supabaseClient.from('leads').select('id').order('id', { ascending: true }).limit(25);
+            if (data && data.length > 0) {
+                const ids = data.map(i => i.id);
+                await supabaseClient.from('leads').delete().in('id', ids);
+                loadLeads();
+            }
         }
 
-        // Auto-load leads on page load
+        function escapeHtml(str) {
+            return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
+
         window.addEventListener('DOMContentLoaded', loadLeads);
     </script>
 </body>
