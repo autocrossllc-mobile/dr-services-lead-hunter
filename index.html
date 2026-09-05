@@ -16,11 +16,12 @@
             --accent-green: #22c55e;
             --accent-red: #ef4444;
             --accent-orange: #f97316;
+            --accent-purple: #a855f7;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
         body { background: var(--bg-dark); color: var(--text-main); padding: 1.5rem; min-height: 100vh; }
-        .container { max-width: 1300px; margin: 0 auto; }
+        .container { max-width: 1350px; margin: 0 auto; }
 
         header {
             display: flex; justify-content: space-between; align-items: center;
@@ -68,7 +69,9 @@
         .badge-pill {
             padding: 0.15rem 0.5rem; border-radius: 0.25rem; font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
         }
-        .bg-lawn { background: rgba(34, 197, 94, 0.15); color: var(--accent-green); border: 1px solid rgba(34, 197, 94, 0.3); }
+        .bg-res { background: rgba(34, 197, 94, 0.15); color: var(--accent-green); border: 1px solid rgba(34, 197, 94, 0.3); }
+        .bg-comm { background: rgba(168, 85, 247, 0.15); color: var(--accent-purple); border: 1px solid rgba(168, 85, 247, 0.3); }
+        .bg-abatement { background: rgba(239, 68, 68, 0.15); color: var(--accent-red); border: 1px solid rgba(239, 68, 68, 0.3); }
         .bg-absentee { background: rgba(56, 189, 248, 0.15); color: var(--accent-cyan); border: 1px solid rgba(56, 189, 248, 0.3); }
         .bg-tax { background: rgba(249, 115, 22, 0.15); color: var(--accent-orange); border: 1px solid rgba(249, 115, 22, 0.3); }
 
@@ -99,7 +102,7 @@
         <header>
             <div class="header-title">
                 <h1>D&R Property Leads & Dispatch Dashboard</h1>
-                <p>Filter by Job Service Type or County Property Record Categories</p>
+                <p>Categorized by Residential, Commercial, Abatement Notices & Owner Record Types</p>
             </div>
             <div style="display: flex; gap: 0.75rem; align-items: center;">
                 <span id="lead-count" class="counter-badge">0 Active Leads</span>
@@ -110,11 +113,13 @@
         <!-- Service & Category Filter Tabs -->
         <div class="filter-bar">
             <button class="filter-btn active" onclick="filterLeads('ALL', this)">All Leads</button>
-            <button class="filter-btn" onclick="filterLeads('Lawn', this)">🌱 Lawn Care & Weed Abatement</button>
+            <button class="filter-btn" onclick="filterLeads('Residential', this)">🏡 Homeowners (Residential)</button>
+            <button class="filter-btn" onclick="filterLeads('Commercial', this)">🏢 Commercial Properties</button>
+            <button class="filter-btn" onclick="filterLeads('Abatement', this)">🚨 Abatement & Fine Notices</button>
+            <button class="filter-btn" onclick="filterLeads('Lawn', this)">🌱 Lawn Care & Yard Cleanups</button>
             <button class="filter-btn" onclick="filterLeads('Clearing', this)">🚜 Lot Clearing & Cleanups</button>
             <button class="filter-btn" onclick="filterLeads('Absentee', this)">🏠 Absentee Owners</button>
             <button class="filter-btn" onclick="filterLeads('Tax', this)">⚠️ Tax Delinquent</button>
-            <button class="filter-btn" onclick="filterLeads('Code', this)">🚨 Code Enforcement / Fire Hazards</button>
         </div>
 
         <main id="leads-container" class="leads-list">
@@ -160,7 +165,9 @@
             leads.forEach(lead => {
                 const parsed = parseLeadRequest(lead.request || '');
                 let badgeClass = 'bg-absentee';
-                if (lead.service.includes('Lawn') || lead.service.includes('Weed')) badgeClass = 'bg-lawn';
+                if (parsed.propType === 'Commercial') badgeClass = 'bg-comm';
+                else if (parsed.propType === 'Residential') badgeClass = 'bg-res';
+                if (lead.service.includes('Abatement') || lead.service.includes('Code')) badgeClass = 'bg-abatement';
                 if (lead.service.includes('Tax')) badgeClass = 'bg-tax';
 
                 const card = document.createElement('div');
@@ -169,7 +176,7 @@
 
                 card.innerHTML = `
                     <div class="col-main">
-                        <h3>📍 ${escapeHtml(parsed.address)} <span class="badge-pill ${badgeClass}">${escapeHtml(lead.service)}</span></h3>
+                        <h3>📍 ${escapeHtml(parsed.address)} <span class="badge-pill ${badgeClass}">${escapeHtml(parsed.propType)} • ${escapeHtml(lead.service)}</span></h3>
                         <p>👤 Owner: <strong>${escapeHtml(parsed.owner)}</strong> | Location: ${escapeHtml(lead.location || 'San Bernardino, CA')}</p>
                     </div>
                     <div class="col-details">
@@ -189,7 +196,7 @@
         }
 
         function parseLeadRequest(str) {
-            let apn = 'N/A', address = 'Property Parcel', owner = 'Property Owner', phone = 'N/A', email = 'N/A', acres = 'N/A';
+            let apn = 'N/A', address = 'Property Parcel', owner = 'Property Owner', phone = 'N/A', email = 'N/A', acres = 'N/A', propType = 'Residential';
             str.split('|').forEach(part => {
                 const clean = part.trim();
                 if (clean.startsWith('APN:')) apn = clean.replace('APN:', '').trim();
@@ -198,8 +205,9 @@
                 if (clean.startsWith('Phone:')) phone = clean.replace('Phone:', '').trim();
                 if (clean.startsWith('Email:')) email = clean.replace('Email:', '').trim();
                 if (clean.startsWith('Acres:')) acres = clean.replace('Acres:', '').trim();
+                if (clean.startsWith('PropType:')) propType = clean.replace('PropType:', '').trim();
             });
-            return { apn, address, owner, phone, email, acres };
+            return { apn, address, owner, phone, email, acres, propType };
         }
 
         function filterLeads(keyword, btnElem) {
@@ -207,10 +215,17 @@
             btnElem.classList.add('active');
 
             if (keyword === 'ALL') return renderLeads(allLeads);
-            const filtered = allLeads.filter(l => 
-                (l.service && l.service.toLowerCase().includes(keyword.toLowerCase())) ||
-                (l.request && l.request.toLowerCase().includes(keyword.toLowerCase()))
-            );
+
+            const filtered = allLeads.filter(l => {
+                const text = (l.service + " " + l.request).toLowerCase();
+                const key = keyword.toLowerCase();
+
+                if (keyword === 'Commercial') return text.includes('proptype: commercial') || text.includes('commercial');
+                if (keyword === 'Residential') return text.includes('proptype: residential') || (!text.includes('proptype: commercial') && !text.includes('commercial'));
+                if (keyword === 'Abatement') return text.includes('abatement') || text.includes('code enforcement') || text.includes('notice');
+                return text.includes(key);
+            });
+
             renderLeads(filtered);
         }
 
