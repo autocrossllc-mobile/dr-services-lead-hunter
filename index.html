@@ -3,366 +3,180 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AutoCross & Lawn Prospect Dashboard</title>
+  <title>Lawn & Overgrown Weed Scout Route</title>
   <style>
-    * { box-sizing: border-box; }
-    body {
-      font-family: Arial, sans-serif;
-      background-color: #f4f6f8;
-      color: #212529;
-      margin: 0;
-      padding: 15px;
-    }
+    * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background-color: #121212; color: #e0e0e0; margin: 0; padding: 12px; }
+    .container { max-width: 850px; margin: 0 auto; }
+    
+    .header { background: #1e1e1e; padding: 16px; border-radius: 8px; border-bottom: 3px solid #2e7d32; margin-bottom: 12px; }
+    h1 { font-size: 18px; color: #4caf50; margin: 0 0 4px 0; }
+    .subtext { font-size: 12px; color: #aaa; }
 
-    .container {
-      max-width: 1050px;
-      margin: 0 auto;
-      background: #ffffff;
-      padding: 20px;
-      border-radius: 8px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
-    }
+    /* Controls & Pagination */
+    .batch-controls { display: flex; justify-content: space-between; align-items: center; background: #1e1e1e; padding: 10px 14px; border-radius: 6px; margin-bottom: 12px; border: 1px solid #333; }
+    .batch-btn { background: #2a2a2a; color: #4caf50; border: 1px solid #4caf50; padding: 8px 14px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 13px; }
+    .batch-btn:disabled { color: #555; border-color: #333; cursor: not-allowed; }
+    .batch-status { font-size: 13px; font-weight: bold; color: #fff; }
 
-    .header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      border-bottom: 2px solid #2e7d32;
-      padding-bottom: 12px;
-      flex-wrap: wrap;
-      gap: 10px;
-    }
+    .route-btn { display: block; width: 100%; background: #2e7d32; color: white; text-align: center; padding: 14px; border-radius: 6px; font-weight: bold; text-decoration: none; font-size: 15px; margin-bottom: 12px; border: none; cursor: pointer; }
+    .search-bar { width: 100%; padding: 12px; background: #2a2a2a; border: 1px solid #444; color: white; border-radius: 6px; margin-bottom: 12px; font-size: 14px; }
 
-    h1 {
-      font-size: 20px;
-      color: #2e7d32;
-      margin: 0;
-    }
+    /* Organized Street Header & Clean List */
+    .street-header { background: #2a2a2a; padding: 8px 12px; font-size: 13px; font-weight: bold; color: #4caf50; border-radius: 4px; margin: 12px 0 6px 0; text-transform: uppercase; letter-spacing: 0.5px; }
+    
+    .list-item { background: #1e1e1e; border-bottom: 1px solid #2a2a2a; padding: 12px; display: flex; justify-content: space-between; align-items: center; }
+    .list-item:last-child { border-bottom: none; }
+    
+    .item-left { flex: 1; }
+    .item-stop { color: #4caf50; font-weight: bold; font-size: 12px; }
+    .item-address { font-size: 15px; font-weight: bold; color: #fff; margin: 2px 0; }
+    .item-meta { font-size: 12px; color: #aaa; }
 
-    .date-badge {
-      background: #e8f5e9;
-      color: #1b5e20;
-      padding: 5px 12px;
-      border-radius: 15px;
-      font-size: 13px;
-      font-weight: bold;
-    }
-
-    /* Tabs Styling */
-    .tabs {
-      display: flex;
-      gap: 8px;
-      margin-top: 15px;
-      border-bottom: 1px solid #dee2e6;
-      flex-wrap: wrap;
-    }
-
-    .tab-btn {
-      background-color: #e9ecef;
-      border: none;
-      padding: 10px 18px;
-      font-size: 14px;
-      font-weight: bold;
-      color: #495057;
-      border-radius: 6px 6px 0 0;
-      cursor: pointer;
-    }
-
-    .tab-btn.active {
-      background-color: #2e7d32;
-      color: white;
-    }
-
-    /* Controls & Search */
-    .toolbar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin: 15px 0;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-
-    .search-input {
-      flex: 1;
-      min-width: 260px;
-      padding: 10px 14px;
-      font-size: 14px;
-      border: 2px solid #2e7d32;
-      border-radius: 6px;
-      outline: none;
-    }
-
-    .btn-route {
-      background-color: #2e7d32;
-      color: white;
-      border: none;
-      padding: 10px 16px;
-      border-radius: 6px;
-      font-weight: bold;
-      cursor: pointer;
-      font-size: 14px;
-      text-decoration: none;
-      white-space: nowrap;
-    }
-
-    .btn-route:hover {
-      background-color: #1b5e20;
-    }
-
-    /* Tables */
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 5px;
-    }
-
-    th, td {
-      text-align: left;
-      padding: 11px 10px;
-      border-bottom: 1px solid #dee2e6;
-      font-size: 14px;
-    }
-
-    th {
-      background-color: #f1f3f5;
-      color: #495057;
-      font-weight: bold;
-    }
-
-    tr:hover {
-      background-color: #f8f9fa;
-    }
-
-    .stop-num {
-      font-weight: bold;
-      color: #2e7d32;
-      width: 50px;
-    }
-
-    .tag-service {
-      display: inline-block;
-      padding: 2px 8px;
-      background: #f0f4f8;
-      border-radius: 4px;
-      font-size: 12px;
-      font-weight: bold;
-      color: #334e68;
-    }
-
-    .nav-btn {
-      color: #1a73e8;
-      text-decoration: none;
-      font-weight: bold;
-    }
-
-    .nav-btn:hover {
-      text-decoration: underline;
-    }
-
-    .meta-status {
-      font-size: 13px;
-      color: #6c757d;
-      margin-bottom: 8px;
-    }
+    .nav-btn { background: #1565c0; color: white; padding: 8px 14px; border-radius: 4px; text-decoration: none; font-weight: bold; font-size: 13px; white-space: nowrap; margin-left: 10px; }
   </style>
 </head>
 <body>
 
-  <div class="container">
-    <div class="header">
-      <div>
-        <h1>🎯 Lead Manager & Route Navigator</h1>
-        <p style="font-size: 13px; color: #6c757d; margin-top: 4px;">Categorized leads with automated daily route planning</p>
-      </div>
-      <span class="date-badge" id="current-date">Today's Date</span>
-    </div>
-
-    <!-- TABS NAVIGATION -->
-    <div class="tabs">
-      <button class="tab-btn active" onclick="switchTab('daily-route', event)">🚗 Today's Auto-Route</button>
-      <button class="tab-btn" onclick="switchTab('lawn-prospects', event)">🌱 Lawn Prospects</button>
-      <button class="tab-btn" onclick="switchTab('service-leads', event)">🔧 Other / Service Leads</button>
-      <button class="tab-btn" onclick="switchTab('all-leads', event)">📋 Master Database</button>
-    </div>
-
-    <!-- TOOLBAR (Search + Route Launch) -->
-    <div class="toolbar">
-      <input 
-        type="text" 
-        id="search-bar" 
-        class="search-input" 
-        placeholder="🔍 Search current tab by street, owner name, service, or phone..." 
-      />
-      <button class="btn-route" id="launch-maps-btn">🗺️ Open Multi-Stop Route</button>
-    </div>
-
-    <div class="meta-status" id="tab-status">Loading leads...</div>
-
-    <!-- TABLE -->
-    <table>
-      <thead>
-        <tr id="table-head">
-          <th class="stop-num">Stop</th>
-          <th>Property / Address</th>
-          <th>Contact Name</th>
-          <th>Phone Number</th>
-          <th>Category / Service</th>
-          <th>Action</th>
-        </tr>
-      </thead>
-      <tbody id="table-body">
-        <tr>
-          <td colspan="6">Loading database records...</td>
-        </tr>
-      </tbody>
-    </table>
+<div class="container">
+  <div class="header">
+    <h1>🌱 Weed & Lawn Prospect Scout (20-House Batches)</h1>
+    <div class="subtext" id="sync-status">Loading prospect catalog...</div>
   </div>
 
-  <script>
-    const SUPABASE_URL = "https://grccpxhtwgctgwtjtejz.supabase.co";
-    const SUPABASE_KEY = "sb_publishable_DSgli-s1kPh0zA4E-kT64A_6LiMrWg-";
+  <input type="text" id="search-input" class="search-bar" placeholder="🔍 Filter active houses by street, owner, or phone..." oninput="resetAndRender()">
 
-    let allLeads = [];
-    let currentTab = 'daily-route';
+  <div class="batch-controls">
+    <button class="batch-btn" id="prev-btn" onclick="changeBatch(-1)">⬅️ Prev 20</button>
+    <span class="batch-status" id="batch-indicator">Showing 1 - 20</span>
+    <button class="batch-btn" id="next-btn" onclick="changeBatch(1)">Next 20 ➡️</button>
+  </div>
 
-    // Display formatted current date
-    const today = new Date();
-    document.getElementById("current-date").innerText = `📅 ${today.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}`;
+  <button class="route-btn" id="maps-multi-btn">🗺️ Route Current 20 Houses in Google Maps</button>
 
-    function parseAddress(addrStr) {
-      if (!addrStr) return ['', 0];
-      const match = addrStr.trim().match(/^(\d+)\s+(.+)/);
-      return match ? [match[2].toLowerCase(), parseInt(match[1], 10)] : [addrStr.toLowerCase(), 0];
-    }
+  <div id="list-container"></div>
+</div>
 
-    async function loadData() {
-      try {
-        const response = await fetch(`${SUPABASE_URL}/rest/v1/leads?select=*&order=created_at.desc`, {
-          headers: {
-            "apikey": SUPABASE_KEY,
-            "Authorization": `Bearer ${SUPABASE_KEY}`
-          }
-        });
-        allLeads = await response.json();
-        renderTab();
-      } catch (err) {
-        document.getElementById("table-body").innerHTML = `<tr><td colspan="6" style="color:red;">Error loading leads: ${err.message}</td></tr>`;
-      }
-    }
+<script>
+  const SUPABASE_URL = "https://grccpxhtwgctgwtjtejz.supabase.co";
+  const SUPABASE_KEY = "sb_publishable_DSgli-s1kPh0zA4E-kT64A_6LiMrWg-";
+  
+  let dataset = [];
+  let currentBatchIndex = 0;
+  const BATCH_SIZE = 20;
 
-    function switchTab(tabId, event) {
-      currentTab = tabId;
-      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-      event.target.classList.add('active');
-      document.getElementById("search-bar").value = "";
-      renderTab();
-    }
+  function parseAddress(str) {
+    const match = (str || '').trim().match(/^(\d+)\s+(.+)/);
+    return match ? [match[2].toLowerCase(), parseInt(match[1], 10)] : [str.toLowerCase(), 0];
+  }
 
-    function renderTab() {
-      const query = document.getElementById("search-bar").value.toLowerCase().trim();
-      const tbody = document.getElementById("table-body");
-      const statusText = document.getElementById("tab-status");
-
-      let filtered = [];
-
-      // 1. FILTER BY TAB CATEGORY
-      if (currentTab === 'daily-route') {
-        // Automatically selects active Lawn Prospects and generates a daily street-by-street batch
-        const lawnLeads = allLeads.filter(l => (l.service || '').toLowerCase().includes('lawn care'));
-        
-        // Deterministic daily rotation seed using day of year
-        const dayOfYear = Math.floor((today - new Date(today.getFullYear(), 0, 0)) / (1000 * 60 * 60 * 24));
-        const batchSize = 10;
-        const startIndex = (dayOfYear * batchSize) % (lawnLeads.length || 1);
-        
-        // Take today's slice or fallback to all lawn leads if small dataset
-        let todaysBatch = lawnLeads.slice(startIndex, startIndex + batchSize);
-        if (todaysBatch.length < 5) todaysBatch = lawnLeads.slice(0, batchSize);
-
-        // Sort street-by-street for driving efficiency
-        todaysBatch.sort((a, b) => {
-          const [streetA, numA] = parseAddress(a.request);
-          const [streetB, numB] = parseAddress(b.request);
-          return streetA.localeCompare(streetB) || (numA - numB);
-        });
-
-        filtered = todaysBatch;
-
-      } else if (currentTab === 'lawn-prospects') {
-        filtered = allLeads.filter(l => (l.service || '').toLowerCase().includes('lawn care'));
-      } else if (currentTab === 'service-leads') {
-        filtered = allLeads.filter(l => !(l.service || '').toLowerCase().includes('lawn care'));
-      } else {
-        filtered = [...allLeads];
-      }
-
-      // 2. APPLY SEARCH QUERY FILTER
-      if (query) {
-        filtered = filtered.filter(l => {
-          const addr = (l.request || "").toLowerCase();
-          const name = (l.customer || "").toLowerCase();
-          const phone = (l.mobile_phones || "").toLowerCase();
-          const srv = (l.service || "").toLowerCase();
-          return addr.includes(query) || name.includes(query) || phone.includes(query) || srv.includes(query);
-        });
-      }
-
-      // 3. RENDER TABLE
-      tbody.innerHTML = "";
-      const routeAddresses = [];
-
-      if (filtered.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6">No leads found for this view.</td></tr>';
-        statusText.innerText = `0 items in view.`;
-        return;
-      }
-
-      const tabNames = {
-        'daily-route': '🚗 Today\'s Auto-Generated Route (Street-Ordered)',
-        'lawn-prospects': '🌱 All Lawn Care Prospects',
-        'service-leads': '🔧 Other / General Service Requests',
-        'all-leads': '📋 All Master Database Records'
-      };
-
-      statusText.innerText = `${tabNames[currentTab]} — Showing ${filtered.length} entries.`;
-
-      filtered.forEach((lead, idx) => {
-        const addr = lead.request || "N/A";
-        if (addr !== "N/A") routeAddresses.push(addr);
-
-        const row = document.createElement("tr");
-        row.innerHTML = `
-          <td class="stop-num">#${idx + 1}</td>
-          <td><strong>${addr}</strong></td>
-          <td>${lead.customer || 'Current Owner'}</td>
-          <td>${lead.mobile_phones || '—'}</td>
-          <td><span class="tag-service">${lead.service || 'General Inquiry'}</span></td>
-          <td>
-            <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addr)}" target="_blank" class="nav-btn">
-              📍 Navigate
-            </a>
-          </td>
-        `;
-        tbody.appendChild(row);
+  async function loadData() {
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/leads?select=*&order=created_at.desc`, {
+        headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}` }
       });
+      dataset = await res.json();
+      document.getElementById("sync-status").innerText = `Active Database: ${dataset.length} property targets.`;
+      render();
+    } catch (err) {
+      document.getElementById("sync-status").innerText = "Connection error. Check Supabase database.";
+    }
+  }
 
-      // Update multi-stop navigation link for active items
-      document.getElementById("launch-maps-btn").onclick = () => {
-        if (routeAddresses.length > 0) {
-          const stops = routeAddresses.slice(0, 10).map(a => encodeURIComponent(a)).join("/");
-          window.open(`https://www.google.com/maps/dir/${stops}`, "_blank");
-        } else {
-          alert("No addresses available in current view.");
-        }
-      };
+  function changeBatch(direction) {
+    currentBatchIndex += direction;
+    render();
+  }
+
+  function resetAndRender() {
+    currentBatchIndex = 0;
+    render();
+  }
+
+  function render() {
+    const query = document.getElementById("search-input").value.toLowerCase();
+    const container = document.getElementById("list-container");
+    
+    // Filter for lawn/weed prospects
+    let items = dataset.filter(i => (i.service || '').toLowerCase().includes('lawn care'));
+    
+    if (query) {
+      items = items.filter(i => 
+        (i.request || '').toLowerCase().includes(query) ||
+        (i.customer || '').toLowerCase().includes(query) ||
+        (i.mobile_phones || '').toLowerCase().includes(query)
+      );
     }
 
-    // Attach search listener
-    document.getElementById("search-bar").addEventListener("input", renderTab);
+    // Sort Street Name -> House Number
+    items.sort((a, b) => {
+      const [streetA, numA] = parseAddress(a.request);
+      const [streetB, numB] = parseAddress(b.request);
+      return streetA.localeCompare(streetB) || (numA - numB);
+    });
 
-    // Initial load
-    loadData();
-  </script>
+    const totalItems = items.length;
+    const maxBatch = Math.max(0, Math.ceil(totalItems / BATCH_SIZE) - 1);
+    currentBatchIndex = Math.max(0, Math.min(currentBatchIndex, maxBatch));
+
+    const start = currentBatchIndex * BATCH_SIZE;
+    const end = Math.min(start + BATCH_SIZE, totalItems);
+    const activeBatch = items.slice(start, end);
+
+    // Update Pagination Display
+    document.getElementById("batch-indicator").innerText = totalItems > 0 
+      ? `Showing ${start + 1} - ${end} of ${totalItems}` 
+      : "0 Houses Found";
+      
+    document.getElementById("prev-btn").disabled = (currentBatchIndex === 0);
+    document.getElementById("next-btn").disabled = (end >= totalItems);
+
+    container.innerHTML = "";
+    const navAddresses = [];
+
+    let currentStreetGroup = "";
+
+    activeBatch.forEach((item, idx) => {
+      const addr = item.request || 'Address N/A';
+      if (addr !== 'Address N/A') navAddresses.push(addr);
+
+      const [streetName] = parseAddress(addr);
+
+      // Group visually by Street Name
+      if (streetName !== currentStreetGroup) {
+        currentStreetGroup = streetName;
+        const streetHeader = document.createElement("div");
+        streetHeader.className = "street-header";
+        streetHeader.innerText = `🛣️ ${streetName.toUpperCase()}`;
+        container.appendChild(streetHeader);
+      }
+
+      const itemRow = document.createElement("div");
+      itemRow.className = "list-item";
+      itemRow.innerHTML = `
+        <div class="item-left">
+          <div class="item-stop">STOP #${start + idx + 1}</div>
+          <div class="item-address">${addr}</div>
+          <div class="item-meta">👤 ${item.customer || 'Owner'} | 📱 ${item.mobile_phones || 'No phone'}</div>
+        </div>
+        <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addr)}" target="_blank" class="nav-btn">NAV</a>
+      `;
+      container.appendChild(itemRow);
+    });
+
+    // Multi-stop Google Maps URL generator for current 20 houses
+    document.getElementById("maps-multi-btn").onclick = () => {
+      if (navAddresses.length) {
+        // Google Maps supports up to 10 stops per direct link on mobile
+        const stopsUrl = "https://www.google.com/maps/dir/" + navAddresses.slice(0, 10).map(a => encodeURIComponent(a)).join("/");
+        window.open(stopsUrl, "_blank");
+      } else {
+        alert("No valid addresses available in this 20-house batch.");
+      }
+    };
+  }
+
+  loadData();
+</script>
 </body>
 </html>
