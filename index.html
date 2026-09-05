@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>D&R Property Leads & Owner Lookup Dashboard</title>
+    <title>D&R Lead Dispatch & Property Lookup Dashboard</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
@@ -16,7 +16,6 @@
             --accent-green: #22c55e;
             --accent-red: #ef4444;
             --accent-orange: #f97316;
-            --accent-purple: #a855f7;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
@@ -38,10 +37,11 @@
 
         .filter-btn {
             background: var(--panel-bg); color: var(--text-sub); border: 1px solid var(--border-color);
-            padding: 0.4rem 0.85rem; border-radius: 0.5rem; font-size: 0.8rem; font-weight: 600; cursor: pointer;
+            padding: 0.45rem 0.9rem; border-radius: 0.5rem; font-size: 0.825rem; font-weight: 600; cursor: pointer;
+            transition: all 0.2s ease;
         }
 
-        .filter-btn.active, .filter-btn:hover { border-color: var(--accent-cyan); color: var(--accent-cyan); }
+        .filter-btn.active, .filter-btn:hover { border-color: var(--accent-cyan); color: var(--accent-cyan); background: rgba(56, 189, 248, 0.08); }
 
         .counter-badge {
             background: rgba(56, 189, 248, 0.1); color: var(--accent-cyan);
@@ -53,9 +53,6 @@
             background: var(--panel-bg); color: var(--text-main); border: 1px solid var(--border-color);
             padding: 0.5rem 1rem; border-radius: 0.5rem; cursor: pointer; font-weight: 600; font-size: 0.85rem;
         }
-
-        .btn-purge { border-color: rgba(249, 115, 22, 0.4); color: var(--accent-orange); }
-        .btn-purge:hover { background: var(--accent-orange); color: #fff; }
 
         .leads-list { display: flex; flex-direction: column; gap: 0.85rem; }
 
@@ -71,9 +68,9 @@
         .badge-pill {
             padding: 0.15rem 0.5rem; border-radius: 0.25rem; font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
         }
+        .bg-lawn { background: rgba(34, 197, 94, 0.15); color: var(--accent-green); border: 1px solid rgba(34, 197, 94, 0.3); }
         .bg-absentee { background: rgba(56, 189, 248, 0.15); color: var(--accent-cyan); border: 1px solid rgba(56, 189, 248, 0.3); }
         .bg-tax { background: rgba(249, 115, 22, 0.15); color: var(--accent-orange); border: 1px solid rgba(249, 115, 22, 0.3); }
-        .bg-code { background: rgba(239, 68, 68, 0.15); color: var(--accent-red); border: 1px solid rgba(239, 68, 68, 0.3); }
 
         .col-details { font-size: 0.825rem; display: flex; flex-direction: column; gap: 0.25rem; }
         .col-details strong { color: #fff; }
@@ -81,12 +78,6 @@
         .col-est { font-size: 1.05rem; font-weight: 700; color: var(--accent-green); }
 
         .col-actions { display: flex; flex-direction: column; gap: 0.5rem; align-items: flex-end; }
-
-        .btn-contact {
-            background: #0284c7; color: #fff; text-decoration: none; padding: 0.45rem 0.8rem;
-            border-radius: 0.375rem; font-size: 0.775rem; font-weight: 600; text-align: center;
-        }
-        .btn-contact:hover { background: #0369a1; }
 
         .btn-delete {
             background: transparent; color: var(--accent-red); border: 1px solid rgba(239, 68, 68, 0.3);
@@ -107,25 +98,27 @@
     <div class="container">
         <header>
             <div class="header-title">
-                <h1>D&R Property Leads & Absentee Owner Dashboard</h1>
-                <p>Ordered Newest First • Multi-Source County GIS, Code Violations & Tax Delinquency</p>
+                <h1>D&R Property Leads & Dispatch Dashboard</h1>
+                <p>Filter by Job Service Type or County Property Record Categories</p>
             </div>
             <div style="display: flex; gap: 0.75rem; align-items: center;">
                 <span id="lead-count" class="counter-badge">0 Active Leads</span>
                 <button class="btn" onclick="loadLeads()">🔄 Refresh</button>
-                <button class="btn btn-purge" onclick="purgeLeads()">🧹 Clear Old Leads</button>
             </div>
         </header>
 
+        <!-- Service & Category Filter Tabs -->
         <div class="filter-bar">
             <button class="filter-btn active" onclick="filterLeads('ALL', this)">All Leads</button>
+            <button class="filter-btn" onclick="filterLeads('Lawn', this)">🌱 Lawn Care & Weed Abatement</button>
+            <button class="filter-btn" onclick="filterLeads('Clearing', this)">🚜 Lot Clearing & Cleanups</button>
             <button class="filter-btn" onclick="filterLeads('Absentee', this)">🏠 Absentee Owners</button>
             <button class="filter-btn" onclick="filterLeads('Tax', this)">⚠️ Tax Delinquent</button>
-            <button class="filter-btn" onclick="filterLeads('Code', this)">🚨 Fire / Code Violations</button>
+            <button class="filter-btn" onclick="filterLeads('Code', this)">🚨 Code Enforcement / Fire Hazards</button>
         </div>
 
         <main id="leads-container" class="leads-list">
-            <div class="loading">Fetching latest property owner leads...</div>
+            <div class="loading">Loading lead database...</div>
         </main>
     </div>
 
@@ -159,7 +152,7 @@
             document.getElementById('lead-count').innerText = `${leads.length} Active Leads`;
 
             if (leads.length === 0) {
-                container.innerHTML = '<div class="empty">No leads found. Run hunter.py to pull fresh county records.</div>';
+                container.innerHTML = '<div class="empty">No matching leads found for this filter.</div>';
                 return;
             }
 
@@ -167,8 +160,8 @@
             leads.forEach(lead => {
                 const parsed = parseLeadRequest(lead.request || '');
                 let badgeClass = 'bg-absentee';
+                if (lead.service.includes('Lawn') || lead.service.includes('Weed')) badgeClass = 'bg-lawn';
                 if (lead.service.includes('Tax')) badgeClass = 'bg-tax';
-                if (lead.service.includes('Code') || lead.service.includes('Fire')) badgeClass = 'bg-code';
 
                 const card = document.createElement('div');
                 card.className = 'lead-card';
@@ -177,20 +170,17 @@
                 card.innerHTML = `
                     <div class="col-main">
                         <h3>📍 ${escapeHtml(parsed.address)} <span class="badge-pill ${badgeClass}">${escapeHtml(lead.service)}</span></h3>
-                        <p>🏙️ Location: ${escapeHtml(lead.location || 'San Bernardino, CA')} | Owner Mail: ${escapeHtml(parsed.mailAddr)}</p>
+                        <p>👤 Owner: <strong>${escapeHtml(parsed.owner)}</strong> | Location: ${escapeHtml(lead.location || 'San Bernardino, CA')}</p>
                     </div>
                     <div class="col-details">
-                        <span>🆔 APN: <strong>${escapeHtml(parsed.apn)}</strong></span>
-                        <span>📏 Parcel Size: ${escapeHtml(parsed.acres)} Acres</span>
+                        <span>📞 Phone: <strong>${escapeHtml(parsed.phone)}</strong></span>
+                        <span>✉️ Email: ${escapeHtml(parsed.email)}</span>
+                        <span>🆔 APN: ${escapeHtml(parsed.apn)} (${escapeHtml(parsed.acres)} Acres)</span>
                     </div>
                     <div class="col-est">
-                        ${escapeHtml(lead.estimated_job || '$1,800 - $6,500')}
+                        ${escapeHtml(lead.estimated_job || '$1,800 - $5,500')}
                     </div>
                     <div class="col-actions">
-                        ${parsed.contact.startsWith('http') 
-                            ? `<a href="${parsed.contact}" target="_blank" class="btn-contact">📞 Lookup Owner Contact</a>`
-                            : `<span style="font-size:0.75rem; color:var(--accent-cyan);">${escapeHtml(parsed.contact)}</span>`
-                        }
                         <button class="btn-delete" onclick="deleteSingleLead('${lead.id}')">🗑️ Delete</button>
                     </div>
                 `;
@@ -199,27 +189,28 @@
         }
 
         function parseLeadRequest(str) {
-            let apn = 'N/A', address = 'Property Parcel', mailAddr = 'N/A', acres = 'N/A', contact = '#';
+            let apn = 'N/A', address = 'Property Parcel', owner = 'Property Owner', phone = 'N/A', email = 'N/A', acres = 'N/A';
             str.split('|').forEach(part => {
                 const clean = part.trim();
                 if (clean.startsWith('APN:')) apn = clean.replace('APN:', '').trim();
                 if (clean.startsWith('Address:')) address = clean.replace('Address:', '').trim();
-                if (clean.startsWith('Mail Addr:')) mailAddr = clean.replace('Mail Addr:', '').trim();
+                if (clean.startsWith('Owner:')) owner = clean.replace('Owner:', '').trim();
+                if (clean.startsWith('Phone:')) phone = clean.replace('Phone:', '').trim();
+                if (clean.startsWith('Email:')) email = clean.replace('Email:', '').trim();
                 if (clean.startsWith('Acres:')) acres = clean.replace('Acres:', '').trim();
-                if (clean.startsWith('Owner Contact:')) contact = clean.replace('Owner Contact:', '').trim();
             });
-            if (contact === '#' && address !== 'Property Parcel') {
-                contact = `https://www.truepeoplesearch.com/results?streetaddress=${encodeURIComponent(address + ', CA')}`;
-            }
-            return { apn, address, mailAddr, acres, contact };
+            return { apn, address, owner, phone, email, acres };
         }
 
-        function filterLeads(category, btnElem) {
+        function filterLeads(keyword, btnElem) {
             document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
             btnElem.classList.add('active');
 
-            if (category === 'ALL') return renderLeads(allLeads);
-            const filtered = allLeads.filter(l => l.service.toLowerCase().includes(category.toLowerCase()));
+            if (keyword === 'ALL') return renderLeads(allLeads);
+            const filtered = allLeads.filter(l => 
+                (l.service && l.service.toLowerCase().includes(keyword.toLowerCase())) ||
+                (l.request && l.request.toLowerCase().includes(keyword.toLowerCase()))
+            );
             renderLeads(filtered);
         }
 
@@ -230,16 +221,6 @@
                 document.getElementById(`lead-${id}`)?.remove();
                 allLeads = allLeads.filter(l => l.id != id);
                 document.getElementById('lead-count').innerText = `${allLeads.length} Active Leads`;
-            }
-        }
-
-        async function purgeLeads() {
-            if (!confirm("Clear oldest 25 records to keep pipeline clean?")) return;
-            const { data } = await supabaseClient.from('leads').select('id').order('id', { ascending: true }).limit(25);
-            if (data && data.length > 0) {
-                const ids = data.map(i => i.id);
-                await supabaseClient.from('leads').delete().in('id', ids);
-                loadLeads();
             }
         }
 
