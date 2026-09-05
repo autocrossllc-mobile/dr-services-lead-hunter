@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Lawn Care Driving Route</title>
+  <title>Lawn Care Route & Search Engine</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -14,7 +14,7 @@
     }
 
     .container {
-      max-width: 900px;
+      max-width: 950px;
       margin: 0 auto;
       background: #ffffff;
       padding: 20px;
@@ -26,7 +26,6 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 20px;
       border-bottom: 2px solid #2e7d32;
       padding-bottom: 12px;
       flex-wrap: wrap;
@@ -39,20 +38,48 @@
       margin: 0;
     }
 
+    .search-box-row {
+      margin: 15px 0 10px 0;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .search-input {
+      flex: 1;
+      min-width: 260px;
+      padding: 12px 15px;
+      font-size: 15px;
+      border: 2px solid #2e7d32;
+      border-radius: 6px;
+      outline: none;
+    }
+
+    .search-input:focus {
+      box-shadow: 0 0 5px rgba(46, 125, 50, 0.4);
+    }
+
     .btn-route {
       background-color: #2e7d32;
       color: white;
       border: none;
-      padding: 10px 16px;
-      border-radius: 5px;
+      padding: 12px 18px;
+      border-radius: 6px;
       font-weight: bold;
       cursor: pointer;
       text-decoration: none;
       font-size: 14px;
+      white-space: nowrap;
     }
 
     .btn-route:hover {
       background-color: #1b5e20;
+    }
+
+    .meta-status {
+      font-size: 13px;
+      color: #6c757d;
+      margin-bottom: 10px;
     }
 
     table {
@@ -100,11 +127,22 @@
   <div class="container">
     <div class="header">
       <div>
-        <h1>🌱 Lawn Prospect Driving Sheet</h1>
-        <p style="font-size: 13px; color: #6c757d; margin-top: 4px;">Organized alphabetically by street name & house number</p>
+        <h1>🌱 Lawn Prospect Driving Sheet & Search</h1>
+        <p style="font-size: 13px; color: #6c757d; margin-top: 4px;">Street-by-street routing with live search filtering</p>
       </div>
-      <button class="btn-route" id="launch-maps-btn">🗺️ Open Full Route in Google Maps</button>
+      <button class="btn-route" id="launch-maps-btn">🗺️ Route Filtered Stops</button>
     </div>
+
+    <div class="search-box-row">
+      <input 
+        type="text" 
+        id="search-bar" 
+        class="search-input" 
+        placeholder="🔍 Type street name, house #, owner name, or phone number..." 
+      />
+    </div>
+
+    <div class="meta-status" id="results-count">Loading leads dataset...</div>
 
     <table>
       <thead>
@@ -118,7 +156,7 @@
       </thead>
       <tbody id="route-table-body">
         <tr>
-          <td colspan="5">Loading address route...</td>
+          <td colspan="5">Loading address database...</td>
         </tr>
       </tbody>
     </table>
@@ -128,15 +166,18 @@
     const SUPABASE_URL = "https://grccpxhtwgctgwtjtejz.supabase.co";
     const SUPABASE_KEY = "sb_publishable_DSgli-s1kPh0zA4E-kT64A_6LiMrWg-";
 
+    let allLeads = [];
+
     function parseAddress(addrStr) {
       if (!addrStr) return ['', 0];
       const match = addrStr.trim().match(/^(\d+)\s+(.+)/);
       return match ? [match[2].toLowerCase(), parseInt(match[1], 10)] : [addrStr.toLowerCase(), 0];
     }
 
-    async function loadDrivingSheet() {
+    async function fetchAllLeads() {
       const tbody = document.getElementById("route-table-body");
-      
+      const statusText = document.getElementById("results-count");
+
       try {
         const response = await fetch(`${SUPABASE_URL}/rest/v1/leads?service=like.*Lawn%20Care*`, {
           headers: {
@@ -145,55 +186,87 @@
           }
         });
         
-        const leads = await response.json();
+        allLeads = await response.json();
 
-        if (!leads || leads.length === 0) {
+        if (!allLeads || allLeads.length === 0) {
           tbody.innerHTML = '<tr><td colspan="5">No prospects found in database.</td></tr>';
+          statusText.innerText = "0 prospects found.";
           return;
         }
 
-        // Sort street-by-street (Street Name first, then House Number)
-        leads.sort((a, b) => {
-          const [streetA, numA] = parseAddress(a.request);
-          const [streetB, numB] = parseAddress(b.request);
-          return streetA.localeCompare(streetB) || (numA - numB);
-        });
-
-        tbody.innerHTML = "";
-        const routeAddresses = [];
-
-        leads.forEach((lead, idx) => {
-          const addr = lead.request || "N/A";
-          if (addr !== "N/A") routeAddresses.push(addr);
-
-          const row = document.createElement("tr");
-          row.innerHTML = `
-            <td class="stop-num">#${idx + 1}</td>
-            <td><strong>${addr}</strong></td>
-            <td>${lead.customer || 'Current Owner'}</td>
-            <td>${lead.mobile_phones || '—'}</td>
-            <td>
-              <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addr)}" target="_blank" class="nav-btn">
-                📍 Navigate
-              </a>
-            </td>
-          `;
-          tbody.appendChild(row);
-        });
-
-        document.getElementById("launch-maps-btn").onclick = () => {
-          if (routeAddresses.length > 0) {
-            const stops = routeAddresses.slice(0, 10).map(a => encodeURIComponent(a)).join("/");
-            window.open(`https://www.google.com/maps/dir/${stops}`, "_blank");
-          }
-        };
+        filterAndRender();
 
       } catch (err) {
         tbody.innerHTML = `<tr><td colspan="5" style="color:red;">Error loading route: ${err.message}</td></tr>`;
       }
     }
 
-    loadDrivingSheet();
+    function filterAndRender() {
+      const query = document.getElementById("search-bar").value.toLowerCase().trim();
+      const tbody = document.getElementById("route-table-body");
+      const statusText = document.getElementById("results-count");
+
+      // Search engine logic: filter across address, customer name, and phone
+      const filtered = allLeads.filter(lead => {
+        const addr = (lead.request || "").toLowerCase();
+        const customer = (lead.customer || "").toLowerCase();
+        const phone = (lead.mobile_phones || "").toLowerCase();
+        return addr.includes(query) || customer.includes(query) || phone.includes(query);
+      });
+
+      // Sort street-by-street (Street Name first, then House Number)
+      filtered.sort((a, b) => {
+        const [streetA, numA] = parseAddress(a.request);
+        const [streetB, numB] = parseAddress(b.request);
+        return streetA.localeCompare(streetB) || (numA - numB);
+      });
+
+      tbody.innerHTML = "";
+      const routeAddresses = [];
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5">No matching addresses found.</td></tr>';
+        statusText.innerText = `0 matches found out of ${allLeads.length} total prospects.`;
+        return;
+      }
+
+      statusText.innerText = `Showing ${filtered.length} of ${allLeads.length} prospects (sorted by street name & house number).`;
+
+      filtered.forEach((lead, idx) => {
+        const addr = lead.request || "N/A";
+        if (addr !== "N/A") routeAddresses.push(addr);
+
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td class="stop-num">#${idx + 1}</td>
+          <td><strong>${addr}</strong></td>
+          <td>${lead.customer || 'Current Owner'}</td>
+          <td>${lead.mobile_phones || '—'}</td>
+          <td>
+            <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addr)}" target="_blank" class="nav-btn">
+              📍 Navigate
+            </a>
+          </td>
+        `;
+        tbody.appendChild(row);
+      });
+
+      // Update multi-stop Google Maps button to launch route for active search results
+      document.getElementById("launch-maps-btn").onclick = () => {
+        if (routeAddresses.length > 0) {
+          const stops = routeAddresses.slice(0, 10).map(a => encodeURIComponent(a)).join("/");
+          window.open(`https://www.google.com/maps/dir/${stops}`, "_blank");
+        } else {
+          alert("No valid addresses available in current search filter.");
+        }
+      };
+    }
+
+    // Attach real-time search listener
+    document.getElementById("search-bar").addEventListener("input", filterAndRender);
+
+    // Initial load
+    fetchAllLeads();
   </script>
 </body>
 </html>
